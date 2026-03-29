@@ -1,0 +1,67 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1d293d;
+    margin: 0;
+  }
+}
+
+.subtitle {
+  font-size: 12px;
+  color: #90a1b9;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.settingsCard {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1d293d;
+  margin-bottom: 16px;
+}
+
+.formRow {
+  display: flex;
+  gap: 24px;
+}
+
+.formItem {
+  flex: 1;
+}
+
+.switchRow {
+  display: flex;
+  gap: 32px;
+}
+
+.switchItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  span {
+    font-size: 14px;
+    color: #314158;
+  }
+}

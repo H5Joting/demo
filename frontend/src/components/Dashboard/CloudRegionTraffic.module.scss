@@ -1,0 +1,431 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1d293d;
+    margin: 0;
+  }
+
+  .subtitle {
+    font-size: 12px;
+    font-weight: 500;
+    color: #90a1b9;
+  }
+}
+
+.contentCard {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  :global(.ant-card-body) {
+    display: flex;
+    padding: 32px;
+    gap: 32px;
+  }
+}
+
+.leftPanel {
+  width: 397px;
+  border-right: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.overview {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.overviewHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1d293d;
+    margin: 0;
+  }
+}
+
+.overviewIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #eff6ff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(219, 234, 254, 1);
+}
+
+.regionCount {
+  border: 1px solid #f1f5f9;
+  border-radius: 16px;
+  background: #f8fafccc;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+
+  .label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #90a1b9;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .countValue {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 8px;
+
+    .count {
+      font-size: 48px;
+      font-weight: 700;
+      color: #1d293d;
+    }
+
+    .unit {
+      font-size: 14px;
+      color: #90a1b9;
+    }
+  }
+
+  .clusterBreakdown {
+    display: flex;
+    gap: 24px;
+    margin-top: 24px;
+  }
+
+  .clusterItem {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .clusterLabel {
+    font-size: 9px;
+    font-weight: 700;
+    color: #90a1b9;
+    text-transform: uppercase;
+  }
+
+  .clusterCount {
+    display: inline-block;
+    padding: 3px 11px;
+    background: #dbeafe;
+    border: 1px solid #bedbff;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1447e6;
+  }
+}
+
+.statsRow {
+  display: flex;
+  gap: 16px;
+}
+
+.statCard {
+  width: 164px;
+  height: 97px;
+  border: 1px solid #f1f5f9;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 20px 20px 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .statLabel {
+    font-size: 10px;
+    font-weight: 700;
+    color: #90a1b9;
+    letter-spacing: 0.25px;
+  }
+
+  .statValue {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding-right: 42px;
+  }
+
+  .statNumber {
+    font-size: 24px;
+    font-weight: 700;
+    color: #155dfc;
+    line-height: 32px;
+  }
+
+  .statUnit {
+    font-size: 10px;
+    font-weight: 700;
+    color: #90a1b9;
+    margin-top: 13px;
+  }
+
+  .statTime {
+    font-size: 24px;
+    font-weight: 700;
+    font-family: "Inter Fallback", Consolas, monospace;
+    color: #155dfc;
+    line-height: 32px;
+  }
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 16px;
+  margin-top: 16px;
+
+  .statusLabel {
+    font-size: 11px;
+    font-weight: 500;
+    color: #90a1b9;
+  }
+}
+
+.healthTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.healthDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.healthTagSuccess {
+  background: #ecfdf5;
+  border-color: #d0fae5;
+  color: #009966;
+
+  .healthDot {
+    background: #00bc7d;
+  }
+}
+
+.healthTagWarning {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #d97706;
+
+  .healthDot {
+    background: #f59e0b;
+  }
+}
+
+.healthTagError {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+
+  .healthDot {
+    background: #ef4444;
+  }
+}
+
+.rightPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1d293d;
+    margin: 0;
+  }
+
+  .subtitle {
+    font-size: 10px;
+    color: #90a1b9;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+}
+
+.clusterTabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  margin-top: 8px;
+}
+
+.clusterTab {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #90a1b9;
+  border-radius: 0;
+  border: none;
+  border-bottom: 2px solid transparent;
+
+  &:hover {
+    color: #155dfc;
+    background: transparent;
+  }
+}
+
+.activeClusterTab {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #155dfc;
+  border-radius: 0;
+  border: none;
+  border-bottom: 2px solid #155dfc;
+  background: transparent;
+}
+
+.viewAllBtn {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #155dfc;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+
+  &:hover {
+    background: #dbeafe;
+    color: #155dfc;
+  }
+}
+
+.regionList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.regionItem {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.rankBadge {
+  position: relative;
+  width: 40px;
+  height: 40px;
+
+  .rankLabel {
+    position: absolute;
+    top: 0;
+    left: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #62748e;
+    text-transform: uppercase;
+  }
+
+  .rankNumber {
+    position: absolute;
+    top: 11px;
+    left: 11px;
+    font-size: 30px;
+    font-weight: 900;
+    color: #cad5e2;
+  }
+}
+
+.regionInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.regionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.regionName {
+  font-size: 14px;
+  font-weight: 700;
+  color: #314158;
+
+  .nodeCount {
+    font-size: 10px;
+    font-weight: 700;
+    color: #90a1b9;
+  }
+}
+
+.trafficValue {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+
+  .currentTraffic {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1d293d;
+    font-family: Consolas, monospace;
+  }
+
+  .trafficSeparator {
+    font-size: 10px;
+    color: #90a1b9;
+  }
+
+  .maxTraffic {
+    font-size: 10px;
+    color: #90a1b9;
+  }
+}
+
+.progress {
+  :global(.ant-progress-bg) {
+    height: 10px !important;
+    border-radius: 10px;
+  }
+}
+
+.regionStatus {
+  width: 80px;
+}

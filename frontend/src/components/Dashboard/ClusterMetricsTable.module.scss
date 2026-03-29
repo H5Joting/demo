@@ -1,0 +1,289 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1d293d;
+    margin: 0;
+  }
+
+  .subtitle {
+    font-size: 12px;
+    font-weight: 500;
+    color: #90a1b9;
+  }
+}
+
+.tableCard {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+
+  :global(.ant-card-body) {
+    padding: 0;
+  }
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc4d;
+}
+
+.tab {
+  padding: 16px 32px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #90a1b9;
+  border-radius: 0;
+  border: none;
+  border-bottom: 2px solid transparent;
+
+  &:hover {
+    color: #155dfc;
+    background: transparent;
+  }
+}
+
+.activeTab {
+  padding: 16px 32px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #155dfc;
+  border-radius: 0;
+  border: none;
+  border-bottom: 2px solid #155dfc;
+  background: transparent;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.tableRow {
+  border-bottom: 1px solid #f1f5f9;
+  min-height: 56px;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: #f8fafc;
+  }
+}
+
+.colLayer {
+  width: 128px;
+  padding: 0;
+  border-right: 1px solid #f1f5f9;
+  vertical-align: middle;
+  text-align: left;
+}
+
+.colLayerData {
+  background: #ffffff;
+  position: relative;
+}
+
+.colName {
+  padding: 12px 16px;
+  vertical-align: middle;
+}
+
+.colToday,
+.colYesterday {
+  padding: 12px 16px;
+  vertical-align: middle;
+}
+
+.colHistory {
+  padding: 12px 16px;
+  vertical-align: middle;
+}
+
+.colRate {
+  padding: 12px 16px;
+  vertical-align: middle;
+  text-align: left;
+}
+
+.colConclusion {
+  padding: 12px 16px;
+  vertical-align: middle;
+  text-align: left;
+}
+
+.layerCell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 100%;
+  min-height: 56px;
+  padding-left: 16px;
+}
+
+.layerBar {
+  width: 4px;
+  border-radius: 2px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.layerContent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding-left: 8px;
+  gap: 2px;
+}
+
+.layerName {
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.layerEn {
+  font-size: 10px;
+  font-weight: 500;
+  color: #90a1b9;
+  text-transform: uppercase;
+}
+
+.metricName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1d293d;
+}
+
+.metricValue {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.maxValue {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.avgValue {
+  font-size: 10px;
+  font-weight: 500;
+  color: #90a1b9;
+}
+
+.yesterdayMax {
+  font-size: 14px;
+  font-weight: 600;
+  color: #62748e;
+}
+
+.historicalMax {
+  font-size: 14px;
+  font-weight: 600;
+  color: #62748e;
+}
+
+.rateUp {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fb2c36;
+}
+
+.rateDown {
+  font-size: 14px;
+  font-weight: 700;
+  color: #00bc9d;
+}
+
+.rateNeutral {
+  font-size: 14px;
+  font-weight: 700;
+  color: #62748e;
+}
+
+.conclusion {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: flex-start;
+}
+
+.healthStatus {
+  font-size: 14px;
+  font-weight: 500;
+  color: #314158;
+}
+
+.trendBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  height: 32px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #155dfc;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #dbeafe;
+    border-color: #bfdbfe;
+  }
+}
+
+.trendIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: #ffffff;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.tableHeaderRow {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tableHeaderCell {
+  padding: 12px 16px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #90a1b9;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: left;
+  border-right: 1px solid #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+
+  &:last-child {
+    border-right: none;
+  }
+}

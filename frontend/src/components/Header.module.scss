@@ -1,0 +1,158 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0 48px;
+  height: 65px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logoIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #155dfc;
+  border-radius: 4px;
+}
+
+.logoText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1d293d;
+    margin: 0;
+    line-height: 18px;
+    white-space: nowrap;
+  }
+
+  span {
+    font-size: 10px;
+    color: #90a1b9;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.dateInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+
+  .label {
+    font-size: 12px;
+    color: #62748e;
+    font-weight: 500;
+  }
+}
+
+.timeInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+
+  .label {
+    font-size: 12px;
+    color: #62748e;
+    font-weight: 500;
+  }
+
+  .timeValue {
+    font-size: 14px;
+    font-family: Consolas, "PingFang SC", monospace;
+    color: #45556c;
+    font-weight: 500;
+  }
+}
+
+.divider {
+  width: 1px;
+  height: 32px;
+  background: #e2e8f0;
+  flex-shrink: 0;
+}
+
+.inspectionBtn {
+  background: #615fff !important;
+  border-color: #4f39f6 !important;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0 11px;
+  height: 30px;
+  white-space: nowrap;
+
+  &:hover {
+    background: #5046e5 !important;
+    border-color: #4338ca !important;
+  }
+}
+
+.reportBtn {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #45556c;
+  padding: 0 11px;
+  height: 30px;
+  white-space: nowrap;
+
+  &:hover {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #1d293d;
+  }
+}
+
+.statusBadge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ecfdf5;
+  border: 1px solid #d0fae5;
+  border-radius: 20px;
+  padding: 6px 12px;
+  height: 30px;
+  white-space: nowrap;
+
+  span {
+    font-size: 12px;
+    font-weight: 700;
+    color: #007a55;
+  }
+}
+
+.notifyBtn {
+  padding: 8px;
+  height: 36px;
+  color: #62748e;
+  flex-shrink: 0;
+
+  &:hover {
+    color: #1d293d;
+    background: #f1f5f9;
+  }
+}
