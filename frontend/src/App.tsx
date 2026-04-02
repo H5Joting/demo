@@ -5,6 +5,8 @@ import Dashboard from '@/pages/Dashboard';
 import LogQuery from '@/pages/LogQuery';
 import LogStatistics from '@/pages/LogStatistics';
 import SystemSettings from '@/pages/SystemSettings';
+import BusinessSystems from '@/pages/BusinessSystems';
+import ReportOverview from '@/pages/ReportOverview';
 
 function App() {
   return (
@@ -17,6 +19,8 @@ function App() {
             <Route path="statistics" element={<LogStatistics />} />
             <Route path="settings" element={<SystemSettings />} />
           </Route>
+          <Route path="/systems" element={<BusinessSystems />} />
+          <Route path="/overview" element={<ReportOverview />} />
         </Routes>
       </DateProvider>
     </BrowserRouter>

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Spin, message } from 'antd';
+import { Spin } from 'antd';
 import { DashboardSummary } from '@/types';
 import { fetchDashboardSummary } from '@/api';
 import { useDate } from '@/context/DateContext';
+import ErrorState from '@/components/ErrorState';
 import ExecutiveSummary from '@/components/Dashboard/ExecutiveSummary';
 import SlaMetricsTable from '@/components/Dashboard/SlaMetricsTable';
 import ClusterMetricsTable from '@/components/Dashboard/ClusterMetricsTable';
@@ -11,30 +12,35 @@ import AssessmentPlanning from '@/components/Dashboard/AssessmentPlanning';
 import styles from './Dashboard.module.scss';
 
 const Dashboard: React.FC = () => {
-  const { selectedDate } = useDate();
+  const { selectedDate, businessSystemId } = useDate();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDbError, setIsDbError] = useState(false);
+
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    setIsDbError(false);
+    try {
+      const summary = await fetchDashboardSummary(selectedDate, businessSystemId || undefined);
+      setData(summary);
+    } catch (err: any) {
+      console.error('Failed to load data:', err);
+      if (err?.response?.data?.code === 'DATABASE_ERROR') {
+        setIsDbError(true);
+        setError(err.response.data.error || '数据库连接失败');
+      } else {
+        setError(err instanceof Error ? err.message : '加载数据失败');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        console.log('Fetching data for date:', selectedDate);
-        const summary = await fetchDashboardSummary(selectedDate);
-        console.log('Fetched data:', summary);
-        setData(summary);
-      } catch (err) {
-        console.error('Failed to load data:', err);
-        setError(err instanceof Error ? err.message : '加载数据失败');
-        message.error('加载数据失败');
-      } finally {
-        setLoading(false);
-      }
-    };
     loadData();
-  }, [selectedDate]);
+  }, [selectedDate, businessSystemId]);
 
   if (loading) {
     return (
@@ -44,8 +50,16 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  if (!data) {
-    return <div className={styles.error}>加载失败，请刷新页面重试</div>;
+  if (error || !data) {
+    return (
+      <div className={styles.errorContainer}>
+        <ErrorState
+          title={isDbError ? '数据库连接失败' : '数据加载失败'}
+          message={isDbError ? '请检查数据库配置或联系管理员' : error || '加载数据失败'}
+          onRetry={loadData}
+        />
+      </div>
+    );
   }
 
   return (
@@ -56,10 +70,10 @@ const Dashboard: React.FC = () => {
         nfCluster={data.nfCluster}
         wxMetrics={data.wxMetrics}
         nfMetrics={data.nfMetrics}
+        businessSystemId={businessSystemId}
       />
 
       <SlaMetricsTable metrics={data.slaMetrics || []} />
-      {console.log('SLA Metrics data:', data.slaMetrics)}
 
       <ClusterMetricsTable
         wxMetrics={data.wxMetrics}

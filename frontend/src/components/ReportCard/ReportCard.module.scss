@@ -1,0 +1,169 @@
+.systemCard {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 20px;
+  width: 311px;
+  height: 351px;
+  box-sizing: border-box;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.reportTypeBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  padding: 2px 8px;
+  height: 21px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 17px;
+  font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+}
+
+.statusBadge {
+  display: flex;
+  align-items: center;
+  column-gap: 4px;
+  border-radius: 6px;
+  padding: 2px 8px;
+  height: 23px;
+  border-width: 1px;
+  border-style: solid;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 17px;
+  font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+}
+
+.statusDot {
+  border-radius: 50%;
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 23px;
+  color: #1d293d;
+  font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+  text-align: left;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardSubtitle {
+  margin: 2px 0 0 0;
+  font-size: 11px;
+  line-height: 17px;
+  color: #90a1b9;
+  font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+  text-align: left;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardDesc {
+  margin: 12px 0 0 0;
+  font-size: 12px;
+  line-height: 20px;
+  color: #62748e;
+  font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+  text-align: left;
+  width: 100%;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.metricsContainer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.metricCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.metricLabel {
+  font-size: 10px;
+  line-height: 15px;
+  color: #90a1b9;
+  font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+}
+
+.metricValue {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 22px;
+  color: #1d293d;
+  font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+  margin-top: 2px;
+}
+
+.metricChange {
+  display: flex;
+  align-items: center;
+  column-gap: 2px;
+  margin-top: 2px;
+  font-size: 10px;
+  line-height: 15px;
+  font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
+  column-gap: 12px;
+}
+
+.footerItem {
+  display: flex;
+  align-items: center;
+  column-gap: 4px;
+  font-size: 11px;
+  line-height: 17px;
+  color: #90a1b9;
+  font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+
+  svg {
+    flex-shrink: 0;
+  }
+}

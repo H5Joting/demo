@@ -10,6 +10,7 @@ interface Props {
   nfCluster: Cluster | null;
   wxMetrics: LogMetric[];
   nfMetrics: LogMetric[];
+  businessSystemId?: string | null;
 }
 
 const ExecutiveSummary: React.FC<Props> = ({
@@ -18,9 +19,20 @@ const ExecutiveSummary: React.FC<Props> = ({
   nfCluster,
   wxMetrics,
   nfMetrics,
+  businessSystemId,
 }) => {
-  const wxEpsMetric = wxMetrics.find(m => m.metric_name === 'Collector EPS');
-  const nfEpsMetric = nfMetrics.find(m => m.metric_name === 'Collector EPS');
+  const getEpsMetric = (metrics: LogMetric[], systemId: string | null) => {
+    if (systemId === 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa') {
+      return metrics.find(m => m.metric_name === 'Collector EPS');
+    } else if (systemId === 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb') {
+      return metrics.find(m => m.metric_name === '交易TPS');
+    } else if (systemId === 'cccccccc-cccc-cccc-cccc-cccccccccccc') {
+      return metrics.find(m => m.metric_name === '订单TPS');
+    }
+    return metrics.find(m => m.metric_name === 'Collector EPS');
+  };
+  const wxEpsMetric = getEpsMetric(wxMetrics, businessSystemId);
+  const nfEpsMetric = getEpsMetric(nfMetrics, businessSystemId);
 
   if (!report) {
     return (

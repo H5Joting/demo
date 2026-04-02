@@ -1,3 +1,13 @@
+export interface BusinessSystem {
+  id: string;
+  name: string;
+  code: string;
+  description: string;
+  status: 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Cluster {
   id: string;
   name: string;
