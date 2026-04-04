@@ -9,7 +9,7 @@ interface Props {
   actionPlans: ActionPlan[];
 }
 
-const AssessmentPlanning: React.FC<Props> = ({ assessments, actionPlans }) => {
+const AssessmentPlanning: React.FC<Props> = ({ assessments = [], actionPlans = [] }) => {
   const getCategoryTitle = (category: string, index: number) => {
     const titles: Record<string, string> = {
       '集群健康': '1. 运行评估:',
@@ -95,7 +95,7 @@ const AssessmentPlanning: React.FC<Props> = ({ assessments, actionPlans }) => {
                 <span>{plan.priority}</span>
               </div>
               <div className={styles.planItems}>
-                {plan.items.map((item, index) => (
+                {(plan.items || []).map((item, index) => (
                   <div key={index} className={styles.planItem}>
                     <span className={styles.bullet}>•</span>
                     <p>{item}</p>

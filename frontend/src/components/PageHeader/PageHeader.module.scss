@@ -1,0 +1,274 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+  padding: 16px 36px;
+}
+
+.fullWidth {
+  padding-top: 72px;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.breadcrumbItem {
+  color: #90a1b9;
+  line-height: 18px;
+}
+
+.breadcrumbSeparator {
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.breadcrumbActive {
+  color: #314158;
+  line-height: 18px;
+}
+
+.headerContent {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-top: 12px;
+  min-height: 80px;
+}
+
+.titleSection {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.backIconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 8px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+}
+
+.backIcon {
+  font-size: 14px;
+  color: #62748e;
+}
+
+.titleInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badgeCyan {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+  background: #ecfeff;
+  padding: 2px 8px;
+  height: 21px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #0891b2;
+  line-height: 17px;
+}
+
+.badgeWarning {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  background: #fffbeb;
+  padding: 2px 8px;
+  height: 24px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #b45309;
+  line-height: 18px;
+}
+
+.badgeSuccess {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  background: #f0fdf4;
+  padding: 2px 8px;
+  height: 24px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #16a34a;
+  line-height: 18px;
+}
+
+.badgeError {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  background: #fef2f2;
+  padding: 2px 8px;
+  height: 24px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #dc2626;
+  line-height: 18px;
+}
+
+.warningIcon {
+  width: 14px;
+  height: 14px;
+}
+
+.title {
+  margin: 6px 0 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1d293d;
+  line-height: 30px;
+}
+
+.subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #90a1b9;
+  line-height: 18px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 7px 12px;
+  height: 34px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #62748e;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #f8fafc;
+  }
+}
+
+.actionIcon {
+  font-size: 13px;
+}
+
+.actionBtnPrimary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  border: none;
+  border-radius: 8px;
+  background: #155dfc;
+  padding: 8px 12px;
+  height: 34px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #1a5cff;
+  }
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: 16px;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 10px;
+  height: 38px;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.metaItemTags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.metaIcon {
+  font-size: 12px;
+  color: #90a1b9;
+}
+
+.metaLabel {
+  color: #90a1b9;
+  line-height: 18px;
+}
+
+.metaValue {
+  font-weight: 500;
+  color: #314158;
+  line-height: 18px;
+}
+
+.tags {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+  background: #f1f5f9;
+  padding: 1px 6px 3px;
+  font-size: 11px;
+  color: #62748e;
+  line-height: 17px;
+}

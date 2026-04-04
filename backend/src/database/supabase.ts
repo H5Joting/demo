@@ -41,11 +41,11 @@ export const initDatabase = async () => {
     return;
   }
   
-  console.log('Testing database connection (5s timeout)...');
+  console.log('Testing database connection (30s timeout)...');
   
   try {
     const timeoutPromise = new Promise<null>((_, reject) => {
-      setTimeout(() => reject(new Error('Connection timeout')), 5000);
+      setTimeout(() => reject(new Error('Connection timeout')), 30000);
     });
     
     const queryPromise = supabase.from('clusters').select('*', { count: 'exact', head: true });

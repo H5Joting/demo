@@ -11,8 +11,13 @@ import CloudRegionTraffic from '@/components/Dashboard/CloudRegionTraffic';
 import AssessmentPlanning from '@/components/Dashboard/AssessmentPlanning';
 import styles from './Dashboard.module.scss';
 
-const Dashboard: React.FC = () => {
-  const { selectedDate, businessSystemId } = useDate();
+interface DashboardProps {
+  businessSystemId?: string;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ businessSystemId: propBusinessSystemId }) => {
+  const { selectedDate, businessSystemId: contextBusinessSystemId } = useDate();
+  const businessSystemId = propBusinessSystemId || contextBusinessSystemId;
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -86,8 +91,8 @@ const Dashboard: React.FC = () => {
       />
 
       <AssessmentPlanning
-        assessments={data.assessments}
-        actionPlans={data.actionPlans}
+        assessments={data.assessments || []}
+        actionPlans={data.actionPlans || []}
       />
     </div>
   );

@@ -3,6 +3,8 @@ import { fetchBusinessSystems } from '@/api';
 import { BusinessSystem } from '@/types';
 import ReportCard from '@/components/ReportCard';
 import StatCard from '@/components/StatCard';
+import Dashboard from '@/pages/Dashboard';
+import PageHeader from '@/components/PageHeader';
 import styles from './ReportOverview.module.scss';
 
 interface StatCardData {
@@ -23,6 +25,7 @@ const ReportOverview: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [collapsed, setCollapsed] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [selectedSystemId, setSelectedSystemId] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(() => {
     const now = new Date();
     return {
@@ -31,12 +34,26 @@ const ReportOverview: React.FC = () => {
     };
   });
 
+  const getReportDateTime = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  };
+
+  const [reportDateTime, setReportDateTime] = useState(getReportDateTime());
+
   const updateTime = () => {
     const now = new Date();
     setCurrentTime({
       date: now.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-'),
       time: now.toLocaleTimeString('zh-CN', { hour12: false })
     });
+    setReportDateTime(getReportDateTime());
   };
 
   const showToast = (message: string, type: 'success' | 'error') => {
@@ -158,8 +175,6 @@ const ReportOverview: React.FC = () => {
       <header className={`${styles.topNav} ${collapsed ? styles.topNavCollapsed : ''}`}>
         <div className={styles.topNavLeft}></div>
         <div className={styles.topNavRight}>
-          <span className={styles.dateText}>{currentTime.date}</span>
-          <span className={styles.timeText}>{currentTime.time}</span>
           <button 
             className={`${styles.refreshBtn} ${refreshing ? styles.refreshing : ''}`} 
             onClick={() => loadSystems(true)}
@@ -236,7 +251,7 @@ const ReportOverview: React.FC = () => {
         {!collapsed && (
           <div className={styles.sidebarBottom}>
             <button className={styles.helpBtn}>
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <svg width="20" height="20" viewBox="0 0 18 18" fill="none">
                 <path d="M8.99858 16.4974C13.1401 16.4974 16.4974 13.1401 16.4974 8.99857C16.4974 4.85709 13.1401 1.49976 8.99858 1.49976C4.8571 1.49976 1.49976 4.85709 1.49976 8.99857C1.49976 13.1401 4.8571 16.4974 8.99858 16.4974Z" stroke="#90A1B9" strokeWidth="1.49976" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M6.81643 6.74897C6.99273 6.2478 7.34071 5.8252 7.79874 5.55601C8.25677 5.28682 8.79528 5.18842 9.31891 5.27824C9.84254 5.36805 10.3175 5.64029 10.6596 6.04673C11.0018 6.45316 11.189 6.96758 11.1882 7.49885C11.1882 8.99861 8.93859 9.7485 8.93859 9.7485" stroke="#90A1B9" strokeWidth="1.49976" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M8.99858 12.748H9.00608" stroke="#90A1B9" strokeWidth="1.49976" strokeLinecap="round" strokeLinejoin="round"/>
@@ -261,7 +276,7 @@ const ReportOverview: React.FC = () => {
         {collapsed && (
           <div className={styles.sidebarBottomCollapsed}>
             <button className={styles.iconBtn} title="帮助文档">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <svg width="20" height="20" viewBox="0 0 18 18" fill="none">
                 <path d="M8.99858 16.4974C13.1401 16.4974 16.4974 13.1401 16.4974 8.99857C16.4974 4.85709 13.1401 1.49976 8.99858 1.49976C4.8571 1.49976 1.49976 4.85709 1.49976 8.99857C1.49976 13.1401 4.8571 16.4974 8.99858 16.4974Z" stroke="#90A1B9" strokeWidth="1.49976" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M6.81643 6.74897C6.99273 6.2478 7.34071 5.8252 7.79874 5.55601C8.25677 5.28682 8.79528 5.18842 9.31891 5.27824C9.84254 5.36805 10.3175 5.64029 10.6596 6.04673C11.0018 6.45316 11.189 6.96758 11.1882 7.49885C11.1882 8.99861 8.93859 9.7485 8.93859 9.7485" stroke="#90A1B9" strokeWidth="1.49976" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M8.99858 12.748H9.00608" stroke="#90A1B9" strokeWidth="1.49976" strokeLinecap="round" strokeLinejoin="round"/>
@@ -293,15 +308,46 @@ const ReportOverview: React.FC = () => {
         </button>
       </aside>
 
-      <main className={`${styles.main} ${collapsed ? styles.mainExpanded : ''}`}>
-        <header className={styles.header}>
-          <div className={styles.headerLeft}>
-            <h1 className={styles.pageTitle}>报表总览</h1>
-            <p className={styles.pageSubtitle}>管理和监控所有业务系统的分析报表</p>
+      <main className={`${styles.main} ${collapsed ? styles.mainExpanded : ''} ${selectedSystemId ? styles.mainDetail : ''}`}>
+        {selectedSystemId ? (
+          <div className={styles.detailWrapper}>
+            <PageHeader
+              breadcrumb={[
+                { label: '报表总览' },
+                { label: systems.find(s => s.id === selectedSystemId)?.name || '系统详情' },
+              ]}
+              title={systems.find(s => s.id === selectedSystemId)?.name || '系统详情'}
+              subtitle={systems.find(s => s.id === selectedSystemId)?.description}
+              typeBadge="行为分析"
+              statusBadge={systems.find(s => s.id === selectedSystemId)?.status === 'active' ? 'normal' : 'error'}
+              tags={['用户', '行为', '分析']}
+              meta={{
+                reportDate: currentTime.date,
+                lastUpdate: `${currentTime.date} ${currentTime.time}`,
+                owner: '王工 · 数据分析团队',
+                updateFrequency: '每日',
+              }}
+              onRefresh={() => {}}
+              onExport={() => {}}
+              onShare={() => {}}
+              onConfig={() => {}}
+              onBack={() => setSelectedSystemId(null)}
+              fullWidth
+            />
+            <div className={styles.detailContent}>
+              <Dashboard businessSystemId={selectedSystemId} />
+            </div>
           </div>
-        </header>
+        ) : (
+          <>
+            <header className={styles.header}>
+              <div className={styles.headerLeft}>
+                <h1 className={styles.pageTitle}>报表总览</h1>
+                <p className={styles.pageSubtitle}>管理和监控所有业务系统的分析报表</p>
+              </div>
+            </header>
 
-        <section className={styles.statsGrid}>
+            <section className={styles.statsGrid}>
           {statCards.map((card, index) => (
             <StatCard
               key={index}
@@ -331,11 +377,6 @@ const ReportOverview: React.FC = () => {
                 className={styles.searchInput}
               />
             </div>
-            <button className={styles.filterBtn}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M2 4h12M5 2v4M11 2v4M3 8h10a2 2 0 012 2v4a2 2 0 01-2 2H3a2 2 0 01-2-2v-4a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
             <div className={styles.viewToggle}>
               <button className={`${styles.viewBtn} ${styles.active}`}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -360,57 +401,63 @@ const ReportOverview: React.FC = () => {
         </section>
 
         <section className={styles.reportGrid}>
-            {filteredSystems.length > 0 ? filteredSystems.map((system) => {
-              const reportTypeMap: Record<string, { type: string; color: string; bg: string }> = {
-                'payment-center': { type: '订单服务', color: '#155dfc', bg: '#eff6ff' },
-                'order-system': { type: '财务服务', color: '#16a34a', bg: '#ecfdf5' },
-                'user-center': { type: 'API分析', color: '#7c3aed', bg: '#f5f3ff' },
-                'log-service': { type: '日常分析', color: '#ca8a04', bg: '#fffbeb' },
-              };
-              const reportConfig = reportTypeMap[system.code] || { type: 'API分析', color: '#155dfc', bg: '#eff6ff' };
-              
-              return (
-                <ReportCard
-                  key={system.id}
-                  reportType={reportConfig.type}
-                  reportTypeColor={reportConfig.color}
-                  reportTypeBg={reportConfig.bg}
-                  status={system.status === 'active' ? 'normal' : 'offline'}
-                  title={system.name}
-                  description={system.description}
-                  metrics={[
-                    {
-                      label: system.code === 'payment-center' ? '交易量' : system.code === 'order-system' ? '订单量' : '请求量',
-                      value: Math.floor(Math.random() * 50000 + 100000).toLocaleString(),
-                      change: `+${(Math.random() * 10 + 5).toFixed(1)}%`,
-                      trend: 'up' as const,
-                    },
-                    {
-                      label: '响应时间',
-                      value: `${(Math.random() * 200 + 50).toFixed(1)}ms`,
-                      change: `-${(Math.random() * 5 + 1).toFixed(1)}%`,
-                      trend: 'down' as const,
-                    },
-                    {
-                      label: 'CPU使用率',
-                      value: `${(Math.random() * 30 + 60).toFixed(1)}%`,
-                      change: `-${(Math.random() * 3 + 0.5).toFixed(1)}%`,
-                      trend: 'down' as const,
-                    },
-                    {
-                      label: '内存使用率',
-                      value: `${(Math.random() * 20 + 70).toFixed(1)}%`,
-                      change: `+${(Math.random() * 2 + 0.5).toFixed(1)}%`,
-                      trend: 'up' as const,
-                    },
-                  ]}
-                  date="2026-03-29 ~ 2026-03-31"
-                />
-              );
-            }) : (
+            {filteredSystems.length > 0 ? (
+              filteredSystems.map((system) => {
+                const reportTypeMap: Record<string, { type: string; color: string; bg: string }> = {
+                  'payment-center': { type: '订单服务', color: '#155dfc', bg: '#eff6ff' },
+                  'order-system': { type: '财务服务', color: '#16a34a', bg: '#ecfdf5' },
+                  'user-center': { type: 'API分析', color: '#7c3aed', bg: '#f5f3ff' },
+                  'log-service': { type: '日常分析', color: '#ca8a04', bg: '#fffbeb' },
+                };
+                const reportConfig = reportTypeMap[system.code] || { type: 'API分析', color: '#155dfc', bg: '#eff6ff' };
+                
+                return (
+                  <ReportCard
+                    key={system.id}
+                    reportType={reportConfig.type}
+                    reportTypeColor={reportConfig.color}
+                    reportTypeBg={reportConfig.bg}
+                    status={system.status === 'active' ? 'normal' : 'offline'}
+                    title={system.name}
+                    description={system.description}
+                    metrics={[
+                      {
+                        label: system.code === 'payment-center' ? '交易量' : system.code === 'order-system' ? '订单量' : '请求量',
+                        value: Math.floor(Math.random() * 50000 + 100000).toLocaleString(),
+                        change: `+${(Math.random() * 10 + 5).toFixed(1)}%`,
+                        trend: 'up' as const,
+                      },
+                      {
+                        label: '响应时间',
+                        value: `${(Math.random() * 200 + 50).toFixed(1)}ms`,
+                        change: `-${(Math.random() * 5 + 1).toFixed(1)}%`,
+                        trend: 'down' as const,
+                      },
+                      {
+                        label: 'CPU使用率',
+                        value: `${(Math.random() * 30 + 60).toFixed(1)}%`,
+                        change: `-${(Math.random() * 3 + 0.5).toFixed(1)}%`,
+                        trend: 'down' as const,
+                      },
+                      {
+                        label: '内存使用率',
+                        value: `${(Math.random() * 20 + 70).toFixed(1)}%`,
+                        change: `+${(Math.random() * 2 + 0.5).toFixed(1)}%`,
+                        trend: 'up' as const,
+                      },
+                    ]}
+                    date={reportDateTime}
+                    systemId={system.id}
+                    onViewDetail={(id) => setSelectedSystemId(id)}
+                  />
+                );
+              })
+            ) : (
               <div style={{ 
-                width: '100%', 
-                textAlign: 'center', 
+                gridColumn: '1 / -1',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
                 padding: '60px 0',
                 color: '#90a1b9',
                 fontSize: '14px'
@@ -419,6 +466,8 @@ const ReportOverview: React.FC = () => {
               </div>
             )}
           </section>
+          </>
+        )}
       </main>
       
       {toast && (

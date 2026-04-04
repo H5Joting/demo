@@ -20,6 +20,8 @@ interface ReportCardProps {
   metrics: Metric[];
   time?: string;
   date?: string;
+  systemId?: string;
+  onViewDetail?: (systemId: string) => void;
 }
 
 const ReportCard: React.FC<ReportCardProps> = ({
@@ -32,7 +34,9 @@ const ReportCard: React.FC<ReportCardProps> = ({
   description,
   metrics,
   time,
-  date
+  date,
+  systemId,
+  onViewDetail
 }) => {
   const statusConfig = {
     normal: { bg: '#ecfdf5', border: '#d0fae5', text: '#009966', dot: '#00bc7d', label: '正常' },
@@ -47,14 +51,16 @@ const ReportCard: React.FC<ReportCardProps> = ({
     if (trend === 'up') {
       return (
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-          <path d="M6.5 3L9.5 6L6.5 9" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M4 6.5L7 3.5L10 6.5" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M7 3.5V10" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       );
     }
     if (trend === 'down') {
       return (
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-          <path d="M6.5 9L9.5 6L6.5 3" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M4 6.5L7 9.5L10 6.5" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M7 3V9.5" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       );
     }
@@ -66,8 +72,8 @@ const ReportCard: React.FC<ReportCardProps> = ({
   };
 
   const getTrendColor = (trend: 'up' | 'down' | 'neutral') => {
-    if (trend === 'up') return '#16a34a';
-    if (trend === 'down') return '#dc2626';
+    if (trend === 'up') return '#dc2626';
+    if (trend === 'down') return '#16a34a';
     return '#62748e';
   };
 
@@ -112,25 +118,37 @@ const ReportCard: React.FC<ReportCardProps> = ({
       </div>
       
       <div className={styles.cardFooter}>
-        {time && (
-          <div className={styles.footerItem}>
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-              <circle cx="5.5" cy="5.5" r="4.5" stroke="#90a1b9" strokeWidth="1.2" strokeLinecap="round"/>
-              <path d="M5.5 3v1M5.5 8H4" stroke="#90a1b9" strokeWidth="1.2" strokeLinecap="round"/>
-            </svg>
-            <span>{time}</span>
-          </div>
-        )}
-        {date && (
-          <div className={styles.footerItem}>
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-              <rect x="1.5" y="2.5" width="8" height="7" rx="1" stroke="#90a1b9" strokeWidth="1.2"/>
-              <path d="M3 1v2M8 1v2" stroke="#90a1b9" strokeWidth="1.2" strokeLinecap="round"/>
-              <path d="M1.5 5h8" stroke="#90a1b9" strokeWidth="1.2"/>
-            </svg>
-            <span>{date}</span>
-          </div>
-        )}
+        <div className={styles.footerLeft}>
+          {time && (
+            <div className={styles.footerItem}>
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                <circle cx="5.5" cy="5.5" r="4.5" stroke="#90a1b9" strokeWidth="1.2" strokeLinecap="round"/>
+                <path d="M5.5 3v1M5.5 8H4" stroke="#90a1b9" strokeWidth="1.2" strokeLinecap="round"/>
+              </svg>
+              <span>{time}</span>
+            </div>
+          )}
+          {date && (
+            <div className={styles.footerItem}>
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                <rect x="1.5" y="2.5" width="8" height="7" rx="1" stroke="#90a1b9" strokeWidth="1.2"/>
+                <path d="M3 1v2M8 1v2" stroke="#90a1b9" strokeWidth="1.2" strokeLinecap="round"/>
+                <path d="M1.5 5h8" stroke="#90a1b9" strokeWidth="1.2"/>
+              </svg>
+              <span>{date}</span>
+            </div>
+          )}
+        </div>
+        <button className={styles.detailBtn} onClick={() => {
+          if (systemId && onViewDetail) {
+            onViewDetail(systemId);
+          }
+        }}>
+          查看详情
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M4 2L8 6L4 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
       </div>
     </div>
   );

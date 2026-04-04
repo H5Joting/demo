@@ -7,6 +7,7 @@ import LogStatistics from '@/pages/LogStatistics';
 import SystemSettings from '@/pages/SystemSettings';
 import BusinessSystems from '@/pages/BusinessSystems';
 import ReportOverview from '@/pages/ReportOverview';
+import ReportDetail from '@/pages/ReportDetail';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           </Route>
           <Route path="/systems" element={<BusinessSystems />} />
           <Route path="/overview" element={<ReportOverview />} />
+          <Route path="/report/:systemId" element={<ReportDetail />} />
         </Routes>
       </DateProvider>
     </BrowserRouter>
