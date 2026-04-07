@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchBusinessSystems } from '@/api';
+import { fetchBusinessSystemsOverview, BusinessSystemOverview, fetchDataSourceStatus, toggleDataSource, DataSourceStatus } from '@/api';
 import { BusinessSystem } from '@/types';
 import ReportCard from '@/components/ReportCard';
 import StatCard from '@/components/StatCard';
@@ -18,7 +18,7 @@ interface StatCardData {
 }
 
 const ReportOverview: React.FC = () => {
-  const [systems, setSystems] = useState<BusinessSystem[]>([]);
+  const [systems, setSystems] = useState<BusinessSystemOverview[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +26,7 @@ const ReportOverview: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [selectedSystemId, setSelectedSystemId] = useState<string | null>(null);
+  const [dataSourceStatus, setDataSourceStatus] = useState<DataSourceStatus>({ enabled: true, source: 'supabase', connected: false });
   const [currentTime, setCurrentTime] = useState(() => {
     const now = new Date();
     return {
@@ -61,6 +62,27 @@ const ReportOverview: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const loadDataSourceStatus = async () => {
+    try {
+      const status = await fetchDataSourceStatus();
+      setDataSourceStatus(status);
+    } catch (err) {
+      console.error('Failed to load data source status:', err);
+    }
+  };
+
+  const handleToggleDataSource = async () => {
+    try {
+      const newEnabled = !dataSourceStatus.enabled;
+      const status = await toggleDataSource(newEnabled);
+      setDataSourceStatus(status);
+      showToast(`数据源已切换为: ${status.source === 'supabase' ? 'Supabase 数据库' : '本地 Mock 数据'}`, 'success');
+      loadSystems(true);
+    } catch (err) {
+      showToast('切换数据源失败', 'error');
+    }
+  };
+
   const loadSystems = async (isRefresh = false) => {
     try {
       if (isRefresh) {
@@ -69,7 +91,7 @@ const ReportOverview: React.FC = () => {
         setLoading(true);
       }
       setError(null);
-      const data = await fetchBusinessSystems();
+      const data = await fetchBusinessSystemsOverview();
       setSystems(data);
       if (isRefresh) {
         updateTime();
@@ -88,6 +110,7 @@ const ReportOverview: React.FC = () => {
   };
 
   useEffect(() => {
+    loadDataSourceStatus();
     loadSystems();
   }, []);
 
@@ -175,6 +198,19 @@ const ReportOverview: React.FC = () => {
       <header className={`${styles.topNav} ${collapsed ? styles.topNavCollapsed : ''}`}>
         <div className={styles.topNavLeft}></div>
         <div className={styles.topNavRight}>
+          <div className={styles.dataSourceToggle}>
+            <span className={styles.dataSourceLabel}>数据源:</span>
+            <button 
+              className={`${styles.toggleBtn} ${dataSourceStatus.enabled ? styles.toggleOn : styles.toggleOff}`}
+              onClick={handleToggleDataSource}
+              title={`当前: ${dataSourceStatus.source === 'supabase' ? 'Supabase 数据库' : '本地 Mock 数据'}`}
+            >
+              <span className={styles.toggleSlider}></span>
+            </button>
+            <span className={`${styles.dataSourceValue} ${dataSourceStatus.source === 'mock' ? styles.mockSource : ''}`}>
+              {dataSourceStatus.source === 'supabase' ? 'Supabase' : 'Mock'}
+            </span>
+          </div>
           <button 
             className={`${styles.refreshBtn} ${refreshing ? styles.refreshing : ''}`} 
             onClick={() => loadSystems(true)}
@@ -406,6 +442,7 @@ const ReportOverview: React.FC = () => {
                 const reportTypeMap: Record<string, { type: string; color: string; bg: string }> = {
                   'payment-center': { type: '订单服务', color: '#155dfc', bg: '#eff6ff' },
                   'order-system': { type: '财务服务', color: '#16a34a', bg: '#ecfdf5' },
+                  'unified-log': { type: 'API分析', color: '#155dfc', bg: '#eff6ff' },
                   'user-center': { type: 'API分析', color: '#7c3aed', bg: '#f5f3ff' },
                   'log-service': { type: '日常分析', color: '#ca8a04', bg: '#fffbeb' },
                 };
@@ -420,33 +457,13 @@ const ReportOverview: React.FC = () => {
                     status={system.status === 'active' ? 'normal' : 'offline'}
                     title={system.name}
                     description={system.description}
-                    metrics={[
-                      {
-                        label: system.code === 'payment-center' ? '交易量' : system.code === 'order-system' ? '订单量' : '请求量',
-                        value: Math.floor(Math.random() * 50000 + 100000).toLocaleString(),
-                        change: `+${(Math.random() * 10 + 5).toFixed(1)}%`,
-                        trend: 'up' as const,
-                      },
-                      {
-                        label: '响应时间',
-                        value: `${(Math.random() * 200 + 50).toFixed(1)}ms`,
-                        change: `-${(Math.random() * 5 + 1).toFixed(1)}%`,
-                        trend: 'down' as const,
-                      },
-                      {
-                        label: 'CPU使用率',
-                        value: `${(Math.random() * 30 + 60).toFixed(1)}%`,
-                        change: `-${(Math.random() * 3 + 0.5).toFixed(1)}%`,
-                        trend: 'down' as const,
-                      },
-                      {
-                        label: '内存使用率',
-                        value: `${(Math.random() * 20 + 70).toFixed(1)}%`,
-                        change: `+${(Math.random() * 2 + 0.5).toFixed(1)}%`,
-                        trend: 'up' as const,
-                      },
-                    ]}
-                    date={reportDateTime}
+                    metrics={system.metrics.map(m => ({
+                      label: m.label,
+                      value: m.value,
+                      change: m.change,
+                      trend: m.trend as 'up' | 'down' | 'neutral',
+                    }))}
+                    date={system.report_date || reportDateTime}
                     systemId={system.id}
                     onViewDetail={(id) => setSelectedSystemId(id)}
                   />

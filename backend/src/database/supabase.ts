@@ -11,6 +11,7 @@ const notConfigured = !supabaseUrl || !supabaseKey;
 
 let supabase: SupabaseClient | null = null;
 let connectionFailed = false;
+let useSupabaseEnabled = true;
 
 if (!notConfigured) {
   try {
@@ -34,6 +35,23 @@ if (!notConfigured) {
     connectionFailed = true;
   }
 }
+
+export const isUseSupabaseEnabled = (): boolean => {
+  return useSupabaseEnabled;
+};
+
+export const setUseSupabaseEnabled = (enabled: boolean): void => {
+  useSupabaseEnabled = enabled;
+  console.log(`Data source switched to: ${enabled ? 'Supabase' : 'Mock Data'}`);
+};
+
+export const getDataSourceStatus = (): { enabled: boolean; source: string; connected: boolean } => {
+  return {
+    enabled: useSupabaseEnabled,
+    source: useSupabaseEnabled ? 'supabase' : 'mock',
+    connected: !notConfigured && !!supabase && !connectionFailed
+  };
+};
 
 export const initDatabase = async () => {
   if (notConfigured || !supabase) {

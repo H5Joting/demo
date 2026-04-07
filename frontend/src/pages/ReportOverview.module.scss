@@ -89,6 +89,75 @@
   gap: 12px;
 }
 
+.dataSourceToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 32px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.dataSourceLabel {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.toggleBtn {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  padding: 0;
+  
+  &.toggleOn {
+    background-color: #155dfc;
+    
+    .toggleSlider {
+      transform: translateX(20px);
+    }
+  }
+  
+  &.toggleOff {
+    background-color: #cbd5e1;
+    
+    .toggleSlider {
+      transform: translateX(2px);
+    }
+  }
+}
+
+.toggleSlider {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease;
+}
+
+.dataSourceValue {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #155dfc;
+  color: #ffffff;
+}
+
+.mockSource {
+  background: #f59e0b;
+}
+
 .refreshBtn {
   display: flex;
   align-items: center;
