@@ -535,20 +535,71 @@ router.get('/business-systems-overview', async (req: express.Request, res: expre
     
     if (shouldUseMockData() || !await ensureConnection()) {
       const systems = getMockBusinessSystems();
-      const overviewData = systems.map(system => ({
-        id: system.id,
-        name: system.name,
-        code: system.code,
-        description: system.description,
-        status: system.status,
-        metrics: [
-          { label: '请求量', value: Math.floor(Math.random() * 50000 + 100000).toLocaleString(), change: `+${(Math.random() * 10 + 5).toFixed(1)}%`, trend: 'up' },
-          { label: '响应时间', value: `${(Math.random() * 200 + 50).toFixed(1)}ms`, change: `-${(Math.random() * 5 + 1).toFixed(1)}%`, trend: 'down' },
-          { label: 'CPU使用率', value: `${(Math.random() * 30 + 60).toFixed(1)}%`, change: `-${(Math.random() * 3 + 0.5).toFixed(1)}%`, trend: 'down' },
-          { label: '内存使用率', value: `${(Math.random() * 20 + 70).toFixed(1)}%`, change: `+${(Math.random() * 2 + 0.5).toFixed(1)}%`, trend: 'up' },
-        ],
-        report_date: reportDate,
-      }));
+      const overviewData = systems.map(system => {
+        const report = getMockDailyReportByDateAndSystem(reportDate, system.id);
+        const reportId = report?.id || `mock-${system.id}-${reportDate}`;
+        const allMetrics = getMockLogMetricsByReport(reportId);
+        
+        const primaryMetricMap: Record<string, string> = {
+          'unified-log': '请求量',
+          'payment-center': '交易量',
+          'order-system': '订单量',
+        };
+        const primaryMetricName = primaryMetricMap[system.code] || '请求量';
+        
+        const metrics: any[] = [];
+        
+        const primaryMetrics = allMetrics.filter(m => m.metric_name === primaryMetricName);
+        if (primaryMetrics.length > 0) {
+          const totalAvg = primaryMetrics.reduce((sum, m) => sum + (m.today_avg || 0), 0);
+          const avgChangeRate = primaryMetrics.reduce((sum, m) => sum + (m.change_rate || 0), 0) / primaryMetrics.length;
+          metrics.push({
+            label: primaryMetricName,
+            value: Math.round(totalAvg).toLocaleString(),
+            change: `${avgChangeRate >= 0 ? '+' : ''}${avgChangeRate.toFixed(1)}%`,
+            trend: avgChangeRate >= 0 ? 'up' : 'down',
+          });
+        }
+        
+        ['响应时间', 'CPU使用率', '内存使用率'].forEach(metricName => {
+          const vals = allMetrics.filter(m => m.metric_name === metricName);
+          if (vals.length > 0) {
+            const avgValue = vals.reduce((sum, m) => sum + (m.today_avg || 0), 0) / vals.length;
+            const avgChangeRate = vals.reduce((sum, m) => sum + (m.change_rate || 0), 0) / vals.length;
+            metrics.push({
+              label: metricName,
+              value: metricName === '响应时间' ? `${avgValue.toFixed(1)}ms` : `${avgValue.toFixed(1)}%`,
+              change: `${avgChangeRate >= 0 ? '+' : ''}${avgChangeRate.toFixed(1)}%`,
+              trend: avgChangeRate >= 0 ? 'up' : 'down',
+            });
+          }
+        });
+        
+        if (metrics.length === 0) {
+          metrics.push(
+            { label: '请求量', value: '0', change: '+0.0%', trend: 'neutral' },
+            { label: '响应时间', value: '0ms', change: '+0.0%', trend: 'neutral' },
+            { label: 'CPU使用率', value: '0%', change: '+0.0%', trend: 'neutral' },
+            { label: '内存使用率', value: '0%', change: '+0.0%', trend: 'neutral' },
+          );
+        }
+        
+        const reportTimeMap: Record<string, string> = {
+          'unified-log': '08:00:00',
+          'payment-center': '08:10:00',
+          'order-system': '08:30:00',
+        };
+        
+        return {
+          id: system.id,
+          name: system.name,
+          code: system.code,
+          description: system.description,
+          status: system.status,
+          metrics,
+          report_date: reportDate + ' ' + (reportTimeMap[system.code] || '08:00:00'),
+        };
+      });
       return res.json({ success: true, data: overviewData });
     }
     
@@ -668,6 +719,100 @@ router.get('/business-systems-overview', async (req: express.Request, res: expre
       report_date: reportDate + ' ' + (reportTimeMap[system.code] || '08:00:00'),
     }));
     res.json({ success: true, data: overviewData });
+  }
+});
+
+router.get('/assessments', async (req, res) => {
+  try {
+    const { reportId } = req.query;
+    
+    if (shouldUseMockData()) {
+      const assessments = reportId 
+        ? getMockAssessmentsByReport(reportId as string)
+        : mockData.assessments;
+      return res.json({ success: true, data: assessments });
+    }
+    
+    if (!await ensureConnection()) {
+      const assessments = reportId 
+        ? getMockAssessmentsByReport(reportId as string)
+        : mockData.assessments;
+      return res.json({ success: true, data: assessments });
+    }
+    
+    let query = supabase!.from('assessments').select('*');
+    if (reportId) {
+      query = query.eq('report_id', reportId);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('Supabase error:', error);
+      setConnectionFailed();
+      useMockData = true;
+      const assessments = reportId 
+        ? getMockAssessmentsByReport(reportId as string)
+        : mockData.assessments;
+      return res.json({ success: true, data: assessments });
+    }
+    
+    res.json({ success: true, data: data || [] });
+  } catch (error) {
+    console.error('Failed to fetch assessments:', error);
+    setConnectionFailed();
+    useMockData = true;
+    const assessments = req.query.reportId 
+      ? getMockAssessmentsByReport(req.query.reportId as string)
+      : mockData.assessments;
+    res.json({ success: true, data: assessments });
+  }
+});
+
+router.get('/action-plans', async (req, res) => {
+  try {
+    const { reportId } = req.query;
+    
+    if (shouldUseMockData()) {
+      const actionPlans = reportId 
+        ? getMockActionPlansByReport(reportId as string)
+        : mockData.actionPlans;
+      return res.json({ success: true, data: actionPlans });
+    }
+    
+    if (!await ensureConnection()) {
+      const actionPlans = reportId 
+        ? getMockActionPlansByReport(reportId as string)
+        : mockData.actionPlans;
+      return res.json({ success: true, data: actionPlans });
+    }
+    
+    let query = supabase!.from('action_plans').select('*');
+    if (reportId) {
+      query = query.eq('report_id', reportId);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('Supabase error:', error);
+      setConnectionFailed();
+      useMockData = true;
+      const actionPlans = reportId 
+        ? getMockActionPlansByReport(reportId as string)
+        : mockData.actionPlans;
+      return res.json({ success: true, data: actionPlans });
+    }
+    
+    res.json({ success: true, data: data || [] });
+  } catch (error) {
+    console.error('Failed to fetch action plans:', error);
+    setConnectionFailed();
+    useMockData = true;
+    const actionPlans = req.query.reportId 
+      ? getMockActionPlansByReport(req.query.reportId as string)
+      : mockData.actionPlans;
+    res.json({ success: true, data: actionPlans });
   }
 });
 

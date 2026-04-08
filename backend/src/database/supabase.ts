@@ -11,7 +11,7 @@ const notConfigured = !supabaseUrl || !supabaseKey;
 
 let supabase: SupabaseClient | null = null;
 let connectionFailed = false;
-let useSupabaseEnabled = true;
+let useSupabaseEnabled = false;
 
 if (!notConfigured) {
   try {

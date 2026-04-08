@@ -23,12 +23,18 @@ export interface MockDailyReport {
   report_date: string;
   business_system_id: string;
   system_status: 'normal' | 'warning' | 'critical';
+  system_status_text: string;
+  system_insight: string;
   wx_cluster_eps_rate: number;
+  wx_cluster_eps_peak: number;
   wx_cluster_eps_peak_date: string;
   wx_cluster_insight: string;
+  wx_cluster_description: string;
   nf_cluster_eps_rate: number;
+  nf_cluster_eps_peak: number;
   nf_cluster_eps_peak_date: string;
   nf_cluster_insight: string;
+  nf_cluster_description: string;
   created_at: string;
   updated_at: string;
 }
@@ -178,18 +184,92 @@ const generateDailyReports = (): MockDailyReport[] => {
   yesterday.setDate(yesterday.getDate() - 1);
   const dateStr = yesterday.toISOString().split('T')[0];
   
+  const systemConfigs: { [code: string]: { 
+    wxEps: number; 
+    nfEps: number;
+    wxEpsPeak: number;
+    nfEpsPeak: number;
+    wxInsight: string; 
+    nfInsight: string;
+    wxDescription: string;
+    nfDescription: string;
+    status: 'normal' | 'warning' | 'critical';
+    statusText: string;
+    systemInsight: string;
+  } } = {
+    'unified-log': {
+      wxEps: 78,
+      nfEps: 66,
+      wxEpsPeak: 11,
+      nfEpsPeak: 6,
+      wxInsight: '统一日志平台主集群运行正常，EPS峰值较上一交易日下跌5.51%，流量有所回落。',
+      nfInsight: '南方集群指标平稳，弹性良好，无明显瓶颈。',
+      wxDescription: '较上一交易日下跌 5.51%，流量有所回落。',
+      nfDescription: '集群指标平稳，弹性良好，无明显瓶颈。',
+      status: 'normal',
+      statusText: '系统运行正常',
+      systemInsight: '无高风险告警，所有指标正常，但需关注磁盘使用率趋势以防潜在容量风险。'
+    },
+    'payment-center': {
+      wxEps: 85,
+      nfEps: 72,
+      wxEpsPeak: 8,
+      nfEpsPeak: 4,
+      wxInsight: '支付中心主集群交易量稳定，响应时间在正常范围内，建议关注高峰期资源使用。',
+      nfInsight: '支付备集群运行正常，可作为主集群的容灾备份。',
+      wxDescription: '交易量稳定，响应时间正常，建议关注高峰期资源使用。',
+      nfDescription: '备集群运行正常，可作为主集群的容灾备份。',
+      status: 'normal',
+      statusText: '系统运行正常',
+      systemInsight: '交易成功率保持在99.9%以上，但CPU使用率偏高，建议关注高峰期资源分配。'
+    },
+    'order-system': {
+      wxEps: 92,
+      nfEps: 58,
+      wxEpsPeak: 9.5,
+      nfEpsPeak: 4.8,
+      wxInsight: '订单系统主集群负载较高，建议在促销活动前进行容量评估。',
+      nfInsight: '订单备集群资源利用率偏低，可考虑优化资源配置。',
+      wxDescription: '主集群负载较高，建议在促销活动前进行容量评估。',
+      nfDescription: '备集群资源利用率偏低，可考虑优化资源配置。',
+      status: 'warning',
+      statusText: '系统运行预警',
+      systemInsight: '主集群负载较高，订单处理响应时间偏长，建议优化数据库查询并扩容资源。'
+    }
+  };
+  
   businessSystems.forEach(system => {
+    const config = systemConfigs[system.code] || {
+      wxEps: Math.floor(Math.random() * 20) + 70,
+      nfEps: Math.floor(Math.random() * 15) + 55,
+      wxEpsPeak: Math.round((Math.random() * 5 + 8) * 10) / 10,
+      nfEpsPeak: Math.round((Math.random() * 3 + 4) * 10) / 10,
+      wxInsight: `${system.name}主集群运行正常，各项指标稳定。`,
+      nfInsight: `${system.name}备集群运行正常。`,
+      wxDescription: '集群运行正常，各项指标稳定。',
+      nfDescription: '备集群运行正常。',
+      status: 'normal' as const,
+      statusText: '系统运行正常',
+      systemInsight: '系统运行平稳，无异常告警。'
+    };
+    
     reports.push({
       id: `mock-${system.id}-${dateStr}`,
       report_date: dateStr,
       business_system_id: system.id,
-      system_status: 'normal',
-      wx_cluster_eps_rate: Math.floor(Math.random() * 20) + 70,
+      system_status: config.status,
+      system_status_text: config.statusText,
+      system_insight: config.systemInsight,
+      wx_cluster_eps_rate: config.wxEps,
+      wx_cluster_eps_peak: config.wxEpsPeak,
       wx_cluster_eps_peak_date: dateStr,
-      wx_cluster_insight: `${system.name}主集群运行正常，各项指标稳定。`,
-      nf_cluster_eps_rate: Math.floor(Math.random() * 15) + 55,
+      wx_cluster_insight: config.wxInsight,
+      wx_cluster_description: config.wxDescription,
+      nf_cluster_eps_rate: config.nfEps,
+      nf_cluster_eps_peak: config.nfEpsPeak,
       nf_cluster_eps_peak_date: dateStr,
-      nf_cluster_insight: `${system.name}备集群运行正常。`,
+      nf_cluster_insight: config.nfInsight,
+      nf_cluster_description: config.nfDescription,
       created_at: `${dateStr}T08:00:00Z`,
       updated_at: `${dateStr}T08:00:00Z`
     });
@@ -204,27 +284,36 @@ const generateLogMetrics = (): MockLogMetric[] => {
   yesterday.setDate(yesterday.getDate() - 1);
   const dateStr = yesterday.toISOString().split('T')[0];
   
-  const metricTemplates: { [systemCode: string]: { name: string; nameEn: string; layer: 'access' | 'application'; unit: string; baseValue: number }[] } = {
+  const metricTemplates: { [systemCode: string]: { name: string; nameEn: string; layer: 'access' | 'buffer' | 'storage' | 'application'; unit: string; baseValue: number }[] } = {
     'unified-log': [
       { name: '请求量', nameEn: 'Request Count', layer: 'access', unit: '次', baseValue: 120000 },
       { name: '响应时间', nameEn: 'Response Time', layer: 'application', unit: 'ms', baseValue: 50 },
       { name: 'CPU使用率', nameEn: 'CPU Usage', layer: 'application', unit: '%', baseValue: 75 },
       { name: '内存使用率', nameEn: 'Memory Usage', layer: 'application', unit: '%', baseValue: 80 },
-      { name: 'Collector EPS', nameEn: 'Collector EPS', layer: 'application', unit: 'w/s', baseValue: 10 },
+      { name: 'Collector EPS', nameEn: 'Collector EPS', layer: 'application', unit: 'w/s', baseValue: 11 },
+      { name: '平均搜索耗时', nameEn: 'Avg Search Time', layer: 'storage', unit: 'ms', baseValue: 120 },
+      { name: '日志入库耗时', nameEn: 'Log Ingest Time', layer: 'buffer', unit: 'ms', baseValue: 85 },
+      { name: '监控延迟', nameEn: 'Monitor Latency', layer: 'application', unit: 'ms', baseValue: 35 },
     ],
     'payment-center': [
       { name: '交易量', nameEn: 'Transaction Count', layer: 'access', unit: '次', baseValue: 90000 },
       { name: '响应时间', nameEn: 'Response Time', layer: 'application', unit: 'ms', baseValue: 180 },
       { name: 'CPU使用率', nameEn: 'CPU Usage', layer: 'application', unit: '%', baseValue: 85 },
       { name: '内存使用率', nameEn: 'Memory Usage', layer: 'application', unit: '%', baseValue: 72 },
-      { name: '交易TPS', nameEn: 'Transaction TPS', layer: 'application', unit: 'tps', baseValue: 8000 },
+      { name: '交易TPS', nameEn: 'Transaction TPS', layer: 'application', unit: 'w/s', baseValue: 8 },
+      { name: '平均搜索耗时', nameEn: 'Avg Search Time', layer: 'storage', unit: 'ms', baseValue: 95 },
+      { name: '日志入库耗时', nameEn: 'Log Ingest Time', layer: 'buffer', unit: 'ms', baseValue: 68 },
+      { name: '监控延迟', nameEn: 'Monitor Latency', layer: 'application', unit: 'ms', baseValue: 42 },
     ],
     'order-system': [
       { name: '订单量', nameEn: 'Order Count', layer: 'access', unit: '次', baseValue: 105000 },
       { name: '响应时间', nameEn: 'Response Time', layer: 'application', unit: 'ms', baseValue: 220 },
       { name: 'CPU使用率', nameEn: 'CPU Usage', layer: 'application', unit: '%', baseValue: 78 },
       { name: '内存使用率', nameEn: 'Memory Usage', layer: 'application', unit: '%', baseValue: 85 },
-      { name: '订单TPS', nameEn: 'Order TPS', layer: 'application', unit: 'tps', baseValue: 9500 },
+      { name: '订单TPS', nameEn: 'Order TPS', layer: 'application', unit: 'w/s', baseValue: 9.5 },
+      { name: '平均搜索耗时', nameEn: 'Avg Search Time', layer: 'storage', unit: 'ms', baseValue: 145 },
+      { name: '日志入库耗时', nameEn: 'Log Ingest Time', layer: 'buffer', unit: 'ms', baseValue: 92 },
+      { name: '监控延迟', nameEn: 'Monitor Latency', layer: 'application', unit: 'ms', baseValue: 28 },
     ]
   };
   
@@ -239,6 +328,8 @@ const generateLogMetrics = (): MockLogMetric[] => {
     templates.forEach((template, index) => {
       const baseValue = template.baseValue * multiplier;
       const variance = template.baseValue * 0.1;
+      const isEpsMetric = ['Collector EPS', '交易TPS', '订单TPS'].includes(template.name);
+      const roundFn = isEpsMetric ? (n: number) => Math.round(n * 10) / 10 : Math.round;
       
       metrics.push({
         id: `mock-metric-${cluster.id}-${index}`,
@@ -247,13 +338,13 @@ const generateLogMetrics = (): MockLogMetric[] => {
         metric_name: template.name,
         metric_name_en: template.nameEn,
         layer: template.layer,
-        today_max: Math.round(baseValue + variance * (Math.random() * 0.5 + 0.5)),
-        today_avg: Math.round(baseValue),
-        yesterday_max: Math.round(baseValue + variance * (Math.random() * 0.5 + 0.3)),
-        yesterday_avg: Math.round(baseValue - variance * 0.2),
-        historical_max: Math.round(baseValue + variance * 1.5),
+        today_max: roundFn(baseValue + variance * (Math.random() * 0.5 + 0.5)),
+        today_avg: roundFn(baseValue),
+        yesterday_max: roundFn(baseValue + variance * (Math.random() * 0.5 + 0.3)),
+        yesterday_avg: roundFn(baseValue - variance * 0.2),
+        historical_max: roundFn(baseValue + variance * 1.5),
         historical_max_date: '2026-03-15',
-        sla_threshold: Math.round(baseValue * 0.8),
+        sla_threshold: roundFn(baseValue * 0.8),
         unit: template.unit,
         change_rate: Math.round((Math.random() * 6 - 3) * 10) / 10,
         health_status: 'healthy',
@@ -272,17 +363,44 @@ const generateCloudRegions = (): MockCloudRegion[] => {
   yesterday.setDate(yesterday.getDate() - 1);
   const dateStr = yesterday.toISOString().split('T')[0];
   
-  const regionTemplates = [
-    { name: '华东-上海', baseTraffic: 8500 },
-    { name: '华北-北京', baseTraffic: 7200 },
-    { name: '华南-广州', baseTraffic: 6800 },
-  ];
+  const regionTemplatesBySystem: { [code: string]: { name: string; baseTraffic: number }[] } = {
+    'unified-log': [
+      { name: '华东-上海', baseTraffic: 12500 },
+      { name: '华北-北京', baseTraffic: 9800 },
+      { name: '华南-广州', baseTraffic: 8200 },
+      { name: '西南-成都', baseTraffic: 6500 },
+      { name: '华中-武汉', baseTraffic: 5200 },
+    ],
+    'payment-center': [
+      { name: '华东-上海', baseTraffic: 15800 },
+      { name: '华北-北京', baseTraffic: 11200 },
+      { name: '华南-广州', baseTraffic: 9500 },
+      { name: '西南-成都', baseTraffic: 7800 },
+      { name: '西北-西安', baseTraffic: 4500 },
+    ],
+    'order-system': [
+      { name: '华东-上海', baseTraffic: 18200 },
+      { name: '华北-北京', baseTraffic: 13500 },
+      { name: '华南-广州', baseTraffic: 10800 },
+      { name: '西南-成都', baseTraffic: 8200 },
+      { name: '东北-沈阳', baseTraffic: 3800 },
+    ]
+  };
   
   clusters.forEach(cluster => {
+    const system = businessSystems.find(s => s.id === cluster.business_system_id);
+    if (!system) return;
+    
+    const regionTemplates = regionTemplatesBySystem[system.code] || [
+      { name: '华东-上海', baseTraffic: 8500 },
+      { name: '华北-北京', baseTraffic: 7200 },
+      { name: '华南-广州', baseTraffic: 6800 },
+    ];
+    
+    const isMain = cluster.type === 'wx';
+    const multiplier = isMain ? 1.5 : 0.6;
+    
     regionTemplates.forEach((template, index) => {
-      const isMain = cluster.type === 'wx';
-      const multiplier = isMain ? 1.5 : 0.6;
-      
       regions.push({
         id: `mock-region-${cluster.id}-${index}`,
         cluster_id: cluster.id,
@@ -304,21 +422,45 @@ const generateCloudRegions = (): MockCloudRegion[] => {
 const generateAssessments = (reports: MockDailyReport[]): MockAssessment[] => {
   const assessments: MockAssessment[] = [];
   
-  const categories = [
-    { category: '系统稳定性', content: '系统运行稳定，无异常告警。' },
-    { category: '性能评估', content: '平均响应时间正常，性能表现良好。' },
-    { category: '资源使用', content: 'CPU和内存使用率在合理范围内。' },
-    { category: '数据处理', content: '数据处理效率正常，无积压。' },
-  ];
+  const categoriesBySystem: { [code: string]: { category: string; content: string; status: 'normal' | 'warning' | 'critical' }[] } = {
+    'unified-log': [
+      { category: '系统稳定性', content: '统一日志平台运行稳定，无异常告警。', status: 'normal' },
+      { category: '性能评估', content: '日志收集和处理性能正常，EPS峰值略有下降。', status: 'normal' },
+      { category: '资源使用', content: 'CPU和内存使用率在合理范围内，存储空间充足。', status: 'normal' },
+      { category: '数据处理', content: '日志入库延迟正常，无积压现象。', status: 'normal' },
+    ],
+    'payment-center': [
+      { category: '系统稳定性', content: '支付中心运行稳定，交易成功率保持在99.9%以上。', status: 'normal' },
+      { category: '性能评估', content: '交易响应时间略有波动，建议关注高峰期表现。', status: 'warning' },
+      { category: '资源使用', content: '主集群CPU使用率偏高，建议扩容或优化。', status: 'warning' },
+      { category: '数据处理', content: '交易数据处理正常，备集群同步延迟在可接受范围。', status: 'normal' },
+    ],
+    'order-system': [
+      { category: '系统稳定性', content: '订单系统整体稳定，但主集群负载较高。', status: 'warning' },
+      { category: '性能评估', content: '订单处理响应时间偏长，需优化数据库查询。', status: 'warning' },
+      { category: '资源使用', content: '主集群资源紧张，备集群利用率偏低。', status: 'warning' },
+      { category: '数据处理', content: '订单数据处理正常，但高峰期存在轻微延迟。', status: 'normal' },
+    ]
+  };
   
   reports.forEach(report => {
+    const system = businessSystems.find(s => s.id === report.business_system_id);
+    if (!system) return;
+    
+    const categories = categoriesBySystem[system.code] || [
+      { category: '系统稳定性', content: '系统运行稳定，无异常告警。', status: 'normal' },
+      { category: '性能评估', content: '平均响应时间正常，性能表现良好。', status: 'normal' },
+      { category: '资源使用', content: 'CPU和内存使用率在合理范围内。', status: 'normal' },
+      { category: '数据处理', content: '数据处理效率正常，无积压。', status: 'normal' },
+    ];
+    
     categories.forEach((cat, index) => {
       assessments.push({
         id: `mock-assessment-${report.id}-${index}`,
         report_id: report.id,
         category: cat.category,
         content: cat.content,
-        status: 'normal',
+        status: cat.status,
         created_at: report.created_at
       });
     });
@@ -330,13 +472,34 @@ const generateAssessments = (reports: MockDailyReport[]): MockAssessment[] => {
 const generateActionPlans = (reports: MockDailyReport[]): MockActionPlan[] => {
   const plans: MockActionPlan[] = [];
   
-  const planTemplates = [
-    { priority: '高', items: ['持续监控系统运行状态', '关注资源使用趋势'], insight: '建议关注系统负载变化，做好容量规划。' },
-    { priority: '中', items: ['定期检查存储空间使用情况', '优化查询性能'], insight: '存储空间充足，建议定期进行性能优化。' },
-    { priority: '低', items: ['更新监控告警配置', '完善报表功能'], insight: '系统运行平稳，可按计划进行功能迭代。' },
-  ];
+  const planTemplatesBySystem: { [code: string]: { priority: string; items: string[]; insight: string }[] } = {
+    'unified-log': [
+      { priority: '高', items: ['持续监控EPS变化趋势', '关注存储空间增长'], insight: '日志量增长平稳，建议提前规划存储扩容。' },
+      { priority: '中', items: ['优化日志查询性能', '完善日志分类策略'], insight: '查询性能良好，可进一步优化索引策略。' },
+      { priority: '低', items: ['更新告警阈值配置', '完善日志分析报表'], insight: '系统运行平稳，可按计划进行功能迭代。' },
+    ],
+    'payment-center': [
+      { priority: '高', items: ['优化高峰期资源分配', '加强交易监控告警'], insight: '交易高峰期资源紧张，建议提前扩容或优化。' },
+      { priority: '中', items: ['优化数据库查询性能', '完善容灾切换流程'], insight: '数据库查询存在优化空间，建议进行索引优化。' },
+      { priority: '低', items: ['更新监控大盘配置', '完善交易分析报表'], insight: '系统整体稳定，可按计划进行功能迭代。' },
+    ],
+    'order-system': [
+      { priority: '高', items: ['扩容主集群资源', '优化数据库查询'], insight: '主集群负载较高，建议在促销前完成扩容。' },
+      { priority: '中', items: ['均衡主备集群负载', '优化订单处理流程'], insight: '备集群利用率偏低，可考虑负载均衡优化。' },
+      { priority: '低', items: ['更新监控告警配置', '完善订单分析报表'], insight: '系统整体稳定，建议关注促销活动期间的资源使用。' },
+    ]
+  };
   
   reports.forEach(report => {
+    const system = businessSystems.find(s => s.id === report.business_system_id);
+    if (!system) return;
+    
+    const planTemplates = planTemplatesBySystem[system.code] || [
+      { priority: '高', items: ['持续监控系统运行状态', '关注资源使用趋势'], insight: '建议关注系统负载变化，做好容量规划。' },
+      { priority: '中', items: ['定期检查存储空间使用情况', '优化查询性能'], insight: '存储空间充足，建议定期进行性能优化。' },
+      { priority: '低', items: ['更新监控告警配置', '完善报表功能'], insight: '系统运行平稳，可按计划进行功能迭代。' },
+    ];
+    
     planTemplates.forEach((template, index) => {
       plans.push({
         id: `mock-plan-${report.id}-${index}`,
@@ -387,21 +550,139 @@ export const getMockDailyReportByDateAndSystem = (date: string, businessSystemId
 
 export const getMockLogMetricsByReport = (dailyReportId: string) => {
   const report = dailyReports.find(r => r.id === dailyReportId);
-  if (!report) return [];
-  return logMetrics.filter(m => m.report_date === report.report_date);
+  if (!report) {
+    const match = dailyReportId.match(/^mock-([a-f0-9-]+)-(\d{4}-\d{2}-\d{2})$/);
+    if (match) {
+      const [, bsId, dateStr] = match;
+      const systemClusters = clusters.filter(c => c.business_system_id === bsId);
+      const clusterIds = systemClusters.map(c => c.id);
+      return logMetrics.filter(m => m.report_date === dateStr && clusterIds.includes(m.cluster_id));
+    }
+    return [];
+  }
+  const systemClusters = clusters.filter(c => c.business_system_id === report.business_system_id);
+  const clusterIds = systemClusters.map(c => c.id);
+  return logMetrics.filter(m => m.report_date === report.report_date && clusterIds.includes(m.cluster_id));
 };
 
 export const getMockCloudRegionsByReport = (dailyReportId: string) => {
   const report = dailyReports.find(r => r.id === dailyReportId);
-  if (!report) return [];
-  return cloudRegions.filter(r => r.report_date === report.report_date);
+  if (!report) {
+    const match = dailyReportId.match(/^mock-([a-f0-9-]+)-(\d{4}-\d{2}-\d{2})$/);
+    if (match) {
+      const [, bsId, dateStr] = match;
+      const systemClusters = clusters.filter(c => c.business_system_id === bsId);
+      const clusterIds = systemClusters.map(c => c.id);
+      return cloudRegions.filter(r => r.report_date === dateStr && clusterIds.includes(r.cluster_id));
+    }
+    return [];
+  }
+  const systemClusters = clusters.filter(c => c.business_system_id === report.business_system_id);
+  const clusterIds = systemClusters.map(c => c.id);
+  return cloudRegions.filter(r => r.report_date === report.report_date && clusterIds.includes(r.cluster_id));
 };
 
-export const getMockAssessmentsByReport = (dailyReportId: string) =>
-  assessments.filter(a => a.report_id === dailyReportId);
+export const getMockAssessmentsByReport = (dailyReportId: string) => {
+  const report = dailyReports.find(r => r.id === dailyReportId);
+  if (report) {
+    return assessments.filter(a => a.report_id === dailyReportId);
+  }
+  
+  const match = dailyReportId.match(/^mock-([a-f0-9-]+)-(\d{4}-\d{2}-\d{2})$/);
+  if (match) {
+    const [, bsId] = match;
+    const system = businessSystems.find(s => s.id === bsId);
+    if (!system) return [];
+    
+    const categoriesBySystem: { [code: string]: { category: string; content: string; status: 'normal' | 'warning' | 'critical' }[] } = {
+      'unified-log': [
+        { category: '系统稳定性', content: '统一日志平台运行稳定，无异常告警。', status: 'normal' },
+        { category: '性能评估', content: '日志收集和处理性能正常，EPS峰值略有下降。', status: 'normal' },
+        { category: '资源使用', content: 'CPU和内存使用率在合理范围内，存储空间充足。', status: 'normal' },
+        { category: '数据处理', content: '日志入库延迟正常，无积压现象。', status: 'normal' },
+      ],
+      'payment-center': [
+        { category: '系统稳定性', content: '支付中心运行稳定，交易成功率保持在99.9%以上。', status: 'normal' },
+        { category: '性能评估', content: '交易响应时间略有波动，建议关注高峰期表现。', status: 'warning' },
+        { category: '资源使用', content: '主集群CPU使用率偏高，建议扩容或优化。', status: 'warning' },
+        { category: '数据处理', content: '交易数据处理正常，备集群同步延迟在可接受范围。', status: 'normal' },
+      ],
+      'order-system': [
+        { category: '系统稳定性', content: '订单系统整体稳定，但主集群负载较高。', status: 'warning' },
+        { category: '性能评估', content: '订单处理响应时间偏长，需优化数据库查询。', status: 'warning' },
+        { category: '资源使用', content: '主集群资源紧张，备集群利用率偏低。', status: 'warning' },
+        { category: '数据处理', content: '订单数据处理正常，但高峰期存在轻微延迟。', status: 'normal' },
+      ]
+    };
+    
+    const categories = categoriesBySystem[system.code] || [
+      { category: '系统稳定性', content: '系统运行稳定，无异常告警。', status: 'normal' },
+      { category: '性能评估', content: '平均响应时间正常，性能表现良好。', status: 'normal' },
+      { category: '资源使用', content: 'CPU和内存使用率在合理范围内。', status: 'normal' },
+      { category: '数据处理', content: '数据处理效率正常，无积压。', status: 'normal' },
+    ];
+    
+    return categories.map((cat, index) => ({
+      id: `mock-assessment-${dailyReportId}-${index}`,
+      report_id: dailyReportId,
+      category: cat.category,
+      content: cat.content,
+      status: cat.status,
+      created_at: `${match[2]}T08:00:00Z`
+    }));
+  }
+  
+  return [];
+};
 
-export const getMockActionPlansByReport = (dailyReportId: string) =>
-  actionPlans.filter(p => p.report_id === dailyReportId);
+export const getMockActionPlansByReport = (dailyReportId: string) => {
+  const report = dailyReports.find(r => r.id === dailyReportId);
+  if (report) {
+    return actionPlans.filter(p => p.report_id === dailyReportId);
+  }
+  
+  const match = dailyReportId.match(/^mock-([a-f0-9-]+)-(\d{4}-\d{2}-\d{2})$/);
+  if (match) {
+    const [, bsId] = match;
+    const system = businessSystems.find(s => s.id === bsId);
+    if (!system) return [];
+    
+    const planTemplatesBySystem: { [code: string]: { priority: string; items: string[]; insight: string }[] } = {
+      'unified-log': [
+        { priority: '高', items: ['持续监控EPS变化趋势', '关注存储空间增长'], insight: '日志量增长平稳，建议提前规划存储扩容。' },
+        { priority: '中', items: ['优化日志查询性能', '完善日志分类策略'], insight: '查询性能良好，可进一步优化索引策略。' },
+        { priority: '低', items: ['更新告警阈值配置', '完善日志分析报表'], insight: '系统运行平稳，可按计划进行功能迭代。' },
+      ],
+      'payment-center': [
+        { priority: '高', items: ['优化高峰期资源分配', '加强交易监控告警'], insight: '交易高峰期资源紧张，建议提前扩容或优化。' },
+        { priority: '中', items: ['优化数据库查询性能', '完善容灾切换流程'], insight: '数据库查询存在优化空间，建议进行索引优化。' },
+        { priority: '低', items: ['更新监控大盘配置', '完善交易分析报表'], insight: '系统整体稳定，可按计划进行功能迭代。' },
+      ],
+      'order-system': [
+        { priority: '高', items: ['扩容主集群资源', '优化数据库查询'], insight: '主集群负载较高，建议在促销前完成扩容。' },
+        { priority: '中', items: ['均衡主备集群负载', '优化订单处理流程'], insight: '备集群利用率偏低，可考虑负载均衡优化。' },
+        { priority: '低', items: ['更新监控告警配置', '完善订单分析报表'], insight: '系统整体稳定，建议关注促销活动期间的资源使用。' },
+      ]
+    };
+    
+    const planTemplates = planTemplatesBySystem[system.code] || [
+      { priority: '高', items: ['持续监控系统运行状态', '关注资源使用趋势'], insight: '建议关注系统负载变化，做好容量规划。' },
+      { priority: '中', items: ['定期检查存储空间使用情况', '优化查询性能'], insight: '存储空间充足，建议定期进行性能优化。' },
+      { priority: '低', items: ['更新监控告警配置', '完善报表功能'], insight: '系统运行平稳，可按计划进行功能迭代。' },
+    ];
+    
+    return planTemplates.map((template, index) => ({
+      id: `mock-plan-${dailyReportId}-${index}`,
+      report_id: dailyReportId,
+      priority: template.priority,
+      items: template.items,
+      insight: template.insight,
+      created_at: `${match[2]}T08:00:00Z`
+    }));
+  }
+  
+  return [];
+};
 
 export const getMockAvailableDates = (businessSystemId: string) => {
   const dates = dailyReports
