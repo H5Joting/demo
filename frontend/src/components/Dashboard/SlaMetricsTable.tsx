@@ -86,7 +86,10 @@ const SlaMetricsTable: React.FC<Props> = ({ metrics }) => {
       width: 120,
       render: (_: unknown, record: LogMetric) => (
         <span className={`${styles.healthTag} ${getHealthStatusClass(record.health_status)}`}>
-          <span className={styles.healthDot} />
+          <span className={styles.healthDotWrapper}>
+            <span className={styles.healthDotInner} />
+            <span className={styles.healthDotOuter} />
+          </span>
           {getHealthStatusText(record.health_status)}
         </span>
       ),

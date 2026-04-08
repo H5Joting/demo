@@ -69,6 +69,7 @@ const CloudRegionTraffic: React.FC<Props> = ({ topRegions, regionStats }) => {
                   <span className={styles.clusterCount}>{regionStats.wx_regions} 云区域</span>
                 </div>
               </div>
+              <div className={styles.decorativeCircle} />
             </div>
 
             <div className={styles.statsRow}>
@@ -82,8 +83,10 @@ const CloudRegionTraffic: React.FC<Props> = ({ topRegions, regionStats }) => {
               <div className={styles.statCard}>
                 <span className={styles.statLabel}>峰值时间</span>
                 <div className={styles.statValue}>
-                  <span className={styles.statTime}>09:31:00</span>
-                  <span className={styles.statUnit}>CST</span>
+                  <span className={styles.statTime}>
+                    <span>09:31:00</span>
+                    <span>CST</span>
+                  </span>
                 </div>
               </div>
             </div>
@@ -92,8 +95,11 @@ const CloudRegionTraffic: React.FC<Props> = ({ topRegions, regionStats }) => {
           <div className={styles.statusRow}>
             <span className={styles.statusLabel}>链路实时状态</span>
             <span className={`${styles.healthTag} ${styles.healthTagSuccess}`}>
-              <span className={styles.healthDot} />
-              正常
+              <span className={styles.healthDotWrapper}>
+                <span className={styles.healthDotInner} />
+                <span className={styles.healthDotOuter} />
+              </span>
+              监控中
             </span>
           </div>
         </div>
@@ -153,7 +159,10 @@ const CloudRegionTraffic: React.FC<Props> = ({ topRegions, regionStats }) => {
                 </div>
                 <div className={styles.regionStatus}>
                   <span className={`${styles.healthTag} ${getRegionStatusClass(region)}`}>
-                    <span className={styles.healthDot} />
+                    <span className={styles.healthDotWrapper}>
+                      <span className={styles.healthDotInner} />
+                      <span className={styles.healthDotOuter} />
+                    </span>
                     {getRegionStatusText(region)}
                   </span>
                 </div>

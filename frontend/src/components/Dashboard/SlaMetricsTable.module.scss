@@ -109,10 +109,29 @@
   border: 1px solid;
 }
 
-.healthDot {
+.healthDotWrapper {
+  position: relative;
+  width: 7px;
+  height: 7px;
+}
+
+.healthDotInner {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  border-radius: 50%;
   width: 6px;
   height: 6px;
+}
+
+.healthDotOuter {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0.59;
   border-radius: 50%;
+  width: 7px;
+  height: 7px;
 }
 
 .healthTagSuccess {
@@ -120,8 +139,12 @@
   border-color: #d0fae5;
   color: #009966;
 
-  .healthDot {
+  .healthDotInner {
     background: #00bc7d;
+  }
+
+  .healthDotOuter {
+    background: #00d492;
   }
 }
 
@@ -130,8 +153,12 @@
   border-color: #fde68a;
   color: #d97706;
 
-  .healthDot {
+  .healthDotInner {
     background: #f59e0b;
+  }
+
+  .healthDotOuter {
+    background: #fbbf24;
   }
 }
 
@@ -140,7 +167,11 @@
   border-color: #fecaca;
   color: #dc2626;
 
-  .healthDot {
+  .healthDotInner {
     background: #ef4444;
+  }
+
+  .healthDotOuter {
+    background: #f87171;
   }
 }

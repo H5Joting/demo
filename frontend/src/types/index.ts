@@ -59,12 +59,18 @@ export interface DailyReport {
   id: string;
   report_date: string;
   system_status: 'normal' | 'warning' | 'critical';
+  system_status_text: string;
+  system_insight: string;
   wx_cluster_eps_rate: number;
+  wx_cluster_eps_peak: number;
   wx_cluster_eps_peak_date: string;
   wx_cluster_insight: string;
+  wx_cluster_description: string;
   nf_cluster_eps_rate: number;
+  nf_cluster_eps_peak: number;
   nf_cluster_eps_peak_date: string;
   nf_cluster_insight: string;
+  nf_cluster_description: string;
   created_at: string;
   updated_at: string;
 }

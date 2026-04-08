@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ApiResponse, DashboardSummary, LogMetric, CloudRegion, Cluster, BusinessSystem } from '@/types';
+import { ApiResponse, DashboardSummary, LogMetric, CloudRegion, Cluster, BusinessSystem, Assessment, ActionPlan } from '@/types';
 
 const api = axios.create({
   baseURL: '/api',
@@ -148,6 +148,30 @@ export const toggleDataSource = async (enabled: boolean): Promise<DataSourceStat
   const response = await api.post<ApiResponse<DataSourceStatus>>('/data-source/toggle', { enabled });
   if (!response.data.success || !response.data.data) {
     throw new Error(response.data.error || 'Failed to toggle data source');
+  }
+  return response.data.data;
+};
+
+export const fetchAssessments = async (reportId?: string): Promise<Assessment[]> => {
+  const params: Record<string, string> = {};
+  if (reportId) {
+    params.reportId = reportId;
+  }
+  const response = await api.get<ApiResponse<Assessment[]>>('/assessments', { params });
+  if (!response.data.success || !response.data.data) {
+    throw new Error(response.data.error || 'Failed to fetch assessments');
+  }
+  return response.data.data;
+};
+
+export const fetchActionPlans = async (reportId?: string): Promise<ActionPlan[]> => {
+  const params: Record<string, string> = {};
+  if (reportId) {
+    params.reportId = reportId;
+  }
+  const response = await api.get<ApiResponse<ActionPlan[]>>('/action-plans', { params });
+  if (!response.data.success || !response.data.data) {
+    throw new Error(response.data.error || 'Failed to fetch action plans');
   }
   return response.data.data;
 };

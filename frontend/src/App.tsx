@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { DateProvider } from '@/context/DateContext';
 import MainLayout from '@/layouts/MainLayout';
+import ReportLayout from '@/layouts/ReportLayout';
 import Dashboard from '@/pages/Dashboard';
 import LogQuery from '@/pages/LogQuery';
 import LogStatistics from '@/pages/LogStatistics';
@@ -21,8 +22,10 @@ function App() {
             <Route path="settings" element={<SystemSettings />} />
           </Route>
           <Route path="/systems" element={<BusinessSystems />} />
-          <Route path="/overview" element={<ReportOverview />} />
-          <Route path="/report/:systemId" element={<ReportDetail />} />
+          <Route path="/overview" element={<ReportLayout />}>
+            <Route index element={<ReportOverview />} />
+            <Route path=":systemId" element={<ReportDetail />} />
+          </Route>
         </Routes>
       </DateProvider>
     </BrowserRouter>

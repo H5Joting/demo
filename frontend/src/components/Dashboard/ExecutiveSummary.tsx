@@ -21,19 +21,6 @@ const ExecutiveSummary: React.FC<Props> = ({
   nfMetrics,
   businessSystemId,
 }) => {
-  const getEpsMetric = (metrics: LogMetric[], systemId: string | null) => {
-    if (systemId === 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa') {
-      return metrics.find(m => m.metric_name === 'Collector EPS');
-    } else if (systemId === 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb') {
-      return metrics.find(m => m.metric_name === '交易TPS');
-    } else if (systemId === 'cccccccc-cccc-cccc-cccc-cccccccccccc') {
-      return metrics.find(m => m.metric_name === '订单TPS');
-    }
-    return metrics.find(m => m.metric_name === 'Collector EPS');
-  };
-  const wxEpsMetric = getEpsMetric(wxMetrics, businessSystemId);
-  const nfEpsMetric = getEpsMetric(nfMetrics, businessSystemId);
-
   if (!report) {
     return (
       <section className={styles.section}>
@@ -75,12 +62,12 @@ const ExecutiveSummary: React.FC<Props> = ({
                 {wxCluster?.name || '威新集群'} / {wxCluster?.name_en || 'WX CLUSTER'}
               </div>
               <div className={styles.epsValue}>
-                <span className={styles.value}>{wxEpsMetric?.today_max || 0}w</span>
+                <span className={styles.value}>{report.wx_cluster_eps_peak}w</span>
                 <span className={styles.rate}>
                   EPS峰值 ({report.wx_cluster_eps_rate}%, {report.wx_cluster_eps_peak_date})
                 </span>
               </div>
-              <p className={styles.description}>较上一交易日下跌 5.51%，流量有所回落。</p>
+              <p className={styles.description}>{report.wx_cluster_description || '集群运行正常。'}</p>
             </div>
 
             <div className={styles.divider} />
@@ -90,12 +77,12 @@ const ExecutiveSummary: React.FC<Props> = ({
                 {nfCluster?.name || '南方集群'} / {nfCluster?.name_en || 'NF CLUSTER'}
               </div>
               <div className={styles.epsValue}>
-                <span className={styles.value}>{nfEpsMetric?.today_max || 0}w</span>
+                <span className={styles.value}>{report.nf_cluster_eps_peak}w</span>
                 <span className={styles.rate}>
                   EPS峰值 ({report.nf_cluster_eps_rate}%, {report.nf_cluster_eps_peak_date})
                 </span>
               </div>
-              <p className={styles.description}>集群指标平稳，弹性良好，无明显瓶颈。</p>
+              <p className={styles.description}>{report.nf_cluster_description || '集群运行正常。'}</p>
             </div>
           </div>
 
@@ -116,9 +103,9 @@ const ExecutiveSummary: React.FC<Props> = ({
         <Card className={styles.statusCard}>
           <div className={styles.statusHeader}>
             <CheckCircleOutlined className={styles.statusIcon} />
-            <h3>系统运行正常</h3>
+            <h3>{report.system_status_text || '系统运行正常'}</h3>
           </div>
-          <p className={styles.statusText}>所有指标运行平稳，无风险提示。</p>
+          <p className={styles.statusText}>{report.system_status === 'warning' ? '存在潜在风险，建议关注相关指标。' : '所有指标运行平稳，无风险提示。'}</p>
 
           <div className={styles.insightBox}>
             <div className={styles.insightHeader}>
@@ -127,9 +114,7 @@ const ExecutiveSummary: React.FC<Props> = ({
               </div>
               <span>智能洞察</span>
             </div>
-            <p className={styles.insightText}>
-              无高风险告警，所有指标正常，但需关注磁盘使用率趋势以防潜在容量风险。
-            </p>
+            <p className={styles.insightText}>{report.system_insight || '系统运行平稳，无异常告警。'}</p>
             <Button type="link" className={styles.viewBtn} icon={<EyeOutlined />}>
               查看推理过程
             </Button>

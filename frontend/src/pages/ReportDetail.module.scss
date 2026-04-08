@@ -1,29 +1,8 @@
-.container {
+.loading {
   display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.loadingWrapper {
-  display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  gap: 16px;
-  padding: 100px 0;
-  color: #666;
-}
-
-.loadingSpinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #f3f4f6;
-  border-top-color: #155dfc;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
+  min-height: 400px;
 }
 
 .errorWrapper {
@@ -33,112 +12,8 @@
 }
 
 .content {
-  padding: 0;
-}
-
-.section {
-  margin-bottom: 28px;
-}
-
-.sectionTitle {
-  margin: 0 0 16px 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #1d293d;
-  font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
-}
-
-.metricsGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
-}
-
-.metricCard {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  padding: 20px;
-  gap: 8px;
-  background: #eff6ff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  height: 173px;
-  box-sizing: border-box;
-}
-
-.metricLabel {
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 20px;
-  color: #314158;
-  font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
-}
-
-.metricValue {
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 42px;
-  color: #1d293d;
-  font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
-  margin-top: 12px;
-}
-
-.metricChange {
-  display: flex;
-  align-items: center;
-  column-gap: 4px;
-  margin-top: 2px;
-  font-size: 13px;
-  font-weight: 500;
-  font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
-
-  svg {
-    flex-shrink: 0;
-  }
-}
-
-.infoCard {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 20px;
-}
-
-.infoRow {
-  display: flex;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #f1f5f9;
-
-  &:last-child {
-    border-bottom: none;
-  }
-}
-
-.infoLabel {
-  width: 120px;
-  flex-shrink: 0;
-  font-size: 13px;
-  color: #90a1b9;
-  font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
-}
-
-.infoValue {
-  font-size: 13px;
-  color: #1d293d;
-  font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
-}
-
-.dateRange {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 20px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  font-size: 14px;
-  color: #62748e;
-  font-family: Inter, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimHei, Arial, Helvetica, sans-serif;
+  row-gap: 32px;
+  padding-top: 32px;
 }
