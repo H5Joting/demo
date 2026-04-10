@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Modal, Button, message } from 'antd';
 import { DownloadOutlined, CloseOutlined, CopyOutlined, CheckOutlined } from '@ant-design/icons';
+import JsonView from '@uiw/react-json-view';
 import { ExportJSON } from '@/types';
 import styles from './ExportModal.module.scss';
 
@@ -45,28 +46,20 @@ const ExportModal: React.FC<ExportModalProps> = ({ visible, data, onClose }) => 
     URL.revokeObjectURL(url);
   };
 
-  const dashboard = data?.dashboard;
-  const panels = dashboard?.panels || [];
-  const panelTypes: Record<string, number> = {};
-  
-  panels?.forEach(panel => {
-    const type = panel.type;
-    panelTypes[type] = (panelTypes[type] || 0) + 1;
-  });
-
-  const panelTypeList = Object.entries(panelTypes).map(([type, count]) => (
-    <div key={type} style={{ marginBottom: '4px 0' }}>
-      <span className={styles.panelTypeTag}>{type}</span>
-      <span className={styles.panelCount}>{count}</span>
-    </div>
-  ));
-
   return (
     <Modal
       open={visible}
       title="导出预览"
       onCancel={onClose}
       width={720}
+      style={{ top: 20 }}
+      styles={{
+        body: {
+          height: '500px',
+          overflow: 'hidden',
+          padding: 0,
+        },
+      }}
       footer={[
         <Button key="close" onClick={onClose} icon={<CloseOutlined />}>
           关闭
@@ -91,13 +84,23 @@ const ExportModal: React.FC<ExportModalProps> = ({ visible, data, onClose }) => 
       ]}
     >
       <div className={styles.jsonPreview}>
-        <pre className={styles.preHeader}>
-          <code>{JSON.stringify(data, null, 2)}</code>
-        </pre>
-        
-        <div className={styles.panelStats}>
-          <h4>面板配置统计</h4>
-          {panelTypeList}
+        <div className={styles.jsonContainer}>
+          <JsonView
+            value={data || {}}
+            collapsed={false}
+            displayDataTypes={false}
+            displayObjectSize={true}
+            enableClipboard={false}
+            style={{
+              fontSize: '13px',
+              fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
+              backgroundColor: '#f8fafc',
+              padding: '16px',
+              borderRadius: '8px',
+              height: '100%',
+              overflow: 'auto',
+            }}
+          />
         </div>
       </div>
     </Modal>

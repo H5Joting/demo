@@ -126,10 +126,17 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
+/**
+ * 导出元数据
+ * 
+ * 遵循 Grafana Dashboard 导出规范
+ */
 export interface ExportMetadata {
   exported_at: string;
   exporter_version: string;
   schema_version: number;
+  type: 'dashboard';
+  grafana_version?: string;
 }
 
 export interface ExportClusterConfig {
@@ -206,44 +213,130 @@ export interface GrafanaPanel {
   options?: Record<string, any>;
 }
 
+/**
+ * Grafana 模板变量
+ */
 export interface GrafanaTemplatingVariable {
   name: string;
-  type: 'custom' | 'query';
+  type: 'custom' | 'query' | 'constant' | 'datasource' | 'interval';
   label?: string;
   current: {
     value: string;
     text: string;
   };
   options: any[];
+  query?: string;
+  datasource?: {
+    type: string;
+    uid: string;
+  };
+  refresh?: number;
+  includeAll?: boolean;
+  multi?: boolean;
 }
 
+/**
+ * Grafana 注释配置
+ */
+export interface GrafanaAnnotation {
+  name: string;
+  type: 'dashboard' | 'alert' | 'annotation';
+  datasource?: {
+    type: string;
+    uid: string;
+  };
+  expr?: string;
+  step?: string;
+  titleFormat?: string;
+  textFormat?: string;
+  enable?: boolean;
+  hide?: boolean;
+}
+
+/**
+ * Grafana 链接配置
+ */
+export interface GrafanaLink {
+  title: string;
+  url: string;
+  type: 'link' | 'dashboards';
+  targetBlank?: boolean;
+  icon?: string;
+  asDropdown?: boolean;
+  tags?: string[];
+}
+
+/**
+ * Grafana 面板配置
+ */
+export interface GrafanaPanel {
+  id: string;
+  title: string;
+  description?: string;
+  type: 'summary_status' | 'sla_metrics' | 'cluster_metrics' | 'region_traffic' | 'assessment_action';
+  datasource: GrafanaPanelDatasource;
+  gridPos: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  };
+  fieldConfig?: {
+    defaults?: {
+      unit?: string;
+      thresholds?: {
+        mode: 'absolute' | 'percentage';
+        steps: Array<{
+          color: string;
+          value: number | null;
+        }>;
+      };
+      custom?: Record<string, any>;
+    };
+    overrides?: any[];
+  };
+  options?: Record<string, any>;
+  targets?: any[];
+  transparent?: boolean;
+}
+
+/**
+ * Grafana Dashboard 配置
+ * 
+ * 完全遵循 Grafana Dashboard JSON 规范
+ */
 export interface GrafanaDashboard {
   uid: string;
   title: string;
   description?: string;
   tags?: string[];
   style?: 'dark' | 'light';
-  timezone?: string;
+  timezone?: 'browser' | 'utc';
+  editable?: boolean;
+  graphTooltip?: 0 | 1 | 2;
   refresh?: string;
   time?: {
     from: string;
     to: string;
   };
   timepicker?: {
-    refresh_intervals: string[];
+    refresh_intervals?: string[];
+    nowDelay?: string;
   };
   templating?: {
     list: GrafanaTemplatingVariable[];
   };
   annotations?: {
-    list: any[];
+    list: GrafanaAnnotation[];
   };
+  links?: GrafanaLink[];
   panels: GrafanaPanel[];
   clusters?: {
     wx_cluster: ExportClusterConfig | null;
     nf_cluster: ExportClusterConfig | null;
   };
   version?: number;
+  schemaVersion?: number;
 }
 
 export interface ExportJSON {
