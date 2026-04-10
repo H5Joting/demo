@@ -1,5 +1,5 @@
 import React from 'react';
-import { RightOutlined, ReloadOutlined, DownloadOutlined, ShareAltOutlined, SettingOutlined, CalendarOutlined, ClockCircleOutlined, UserOutlined, SyncOutlined, TagOutlined, LeftOutlined } from '@ant-design/icons';
+import { RightOutlined, ReloadOutlined, DownloadOutlined, ShareAltOutlined, SettingOutlined, CalendarOutlined, ClockCircleOutlined, UserOutlined, SyncOutlined, TagOutlined, LeftOutlined, SaveOutlined, FullscreenOutlined, FullscreenExitOutlined, UndoOutlined } from '@ant-design/icons';
 import styles from './PageHeader.module.scss';
 
 export interface PageHeaderProps {
@@ -20,8 +20,14 @@ export interface PageHeaderProps {
   onExport?: () => void;
   onShare?: () => void;
   onConfig?: () => void;
+  onSave?: () => void;
   onBack?: () => void;
+  onFullscreen?: () => void;
+  onUndo?: () => void;
   fullWidth?: boolean;
+  isConfigMode?: boolean;
+  operationCount?: number;
+  isFullscreen?: boolean;
 }
 
 const PageHeader: React.FC<PageHeaderProps> = ({
@@ -37,8 +43,14 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   onExport,
   onShare,
   onConfig,
+  onSave,
   onBack,
+  onFullscreen,
+  onUndo,
   fullWidth = false,
+  isConfigMode = false,
+  operationCount = 0,
+  isFullscreen = false,
 }) => {
   return (
     <div className={`${styles.container} ${fullWidth ? styles.fullWidth : ''} ${className || ''}`}>
@@ -61,7 +73,10 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           <div className={styles.titleInfo}>
             <div className={styles.badges}>
               {typeBadge && <span className={styles.badgeCyan}>{typeBadge}</span>}
-              {statusBadge && (
+              {isConfigMode && (
+                <span className={styles.configModeBadge}>模板配置模式</span>
+              )}
+              {!isConfigMode && statusBadge && (
                 <div 
                   className={styles.statusBadge}
                   style={{ 
@@ -85,65 +100,96 @@ const PageHeader: React.FC<PageHeaderProps> = ({
         </div>
 
         <div className={styles.actions}>
-          <button className={styles.actionBtn} onClick={onRefresh}>
-            <ReloadOutlined className={styles.actionIcon} />
-            刷新
-          </button>
-          <button className={styles.actionBtn} onClick={onExport}>
-            <DownloadOutlined className={styles.actionIcon} />
-            导出
-          </button>
-          <button className={styles.actionBtn} onClick={onShare}>
-            <ShareAltOutlined className={styles.actionIcon} />
-            分享
-          </button>
-          <button className={styles.actionBtnPrimary} onClick={onConfig}>
-            <SettingOutlined className={styles.actionIcon} />
-            配置
-          </button>
+          {!isConfigMode && (
+            <>
+              <button className={styles.actionBtn} onClick={onRefresh}>
+                <ReloadOutlined className={styles.actionIcon} />
+                刷新
+              </button>
+              <button className={styles.actionBtn} onClick={onExport}>
+                <DownloadOutlined className={styles.actionIcon} />
+                导出
+              </button>
+              <button className={styles.actionBtn} onClick={onShare}>
+                <ShareAltOutlined className={styles.actionIcon} />
+                分享
+              </button>
+            </>
+          )}
+          {isConfigMode ? (
+            <>
+              <button className={styles.actionBtn} onClick={onFullscreen}>
+                {isFullscreen ? (
+                  <FullscreenExitOutlined className={styles.actionIcon} />
+                ) : (
+                  <FullscreenOutlined className={styles.actionIcon} />
+                )}
+                {isFullscreen ? '缩小' : '全屏'}
+              </button>
+              <button 
+                className={styles.actionBtn} 
+                onClick={onUndo}
+                disabled={operationCount === 0}
+              >
+                <UndoOutlined className={styles.actionIcon} />
+                撤销{operationCount > 0 && ` (${operationCount})`}
+              </button>
+              <button className={styles.saveButton} onClick={onSave}>
+                <SaveOutlined className={styles.saveIcon} />
+                保存模板
+              </button>
+            </>
+          ) : (
+            <button className={styles.actionBtnPrimary} onClick={onConfig}>
+              <SettingOutlined className={styles.actionIcon} />
+              配置
+            </button>
+          )}
         </div>
       </div>
 
-      <div className={styles.metaRow}>
-        {meta?.reportDate && (
-          <div className={styles.metaItem}>
-            <CalendarOutlined className={styles.metaIcon} />
-            <span className={styles.metaLabel}>报表日期：</span>
-            <span className={styles.metaValue}>{meta.reportDate}</span>
-          </div>
-        )}
-        {meta?.lastUpdate && (
-          <div className={styles.metaItem}>
-            <ClockCircleOutlined className={styles.metaIcon} />
-            <span className={styles.metaLabel}>最后更新：</span>
-            <span className={styles.metaValue}>{meta.lastUpdate}</span>
-          </div>
-        )}
-        {meta?.owner && (
-          <div className={styles.metaItem}>
-            <UserOutlined className={styles.metaIcon} />
-            <span className={styles.metaLabel}>负责人：</span>
-            <span className={styles.metaValue}>{meta.owner}</span>
-          </div>
-        )}
-        {meta?.updateFrequency && (
-          <div className={styles.metaItem}>
-            <SyncOutlined className={styles.metaIcon} />
-            <span className={styles.metaLabel}>更新频率：</span>
-            <span className={styles.metaValue}>{meta.updateFrequency}</span>
-          </div>
-        )}
-        {tags && tags.length > 0 && (
-          <div className={styles.metaItemTags}>
-            <TagOutlined className={styles.metaIcon} />
-            <div className={styles.tags}>
-              {tags.map((tag, index) => (
-                <span key={index} className={styles.tag}>{tag}</span>
-              ))}
+      {!isConfigMode && (
+        <div className={styles.metaRow}>
+          {meta?.reportDate && (
+            <div className={styles.metaItem}>
+              <CalendarOutlined className={styles.metaIcon} />
+              <span className={styles.metaLabel}>报表日期：</span>
+              <span className={styles.metaValue}>{meta.reportDate}</span>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+          {meta?.lastUpdate && (
+            <div className={styles.metaItem}>
+              <ClockCircleOutlined className={styles.metaIcon} />
+              <span className={styles.metaLabel}>最后更新：</span>
+              <span className={styles.metaValue}>{meta.lastUpdate}</span>
+            </div>
+          )}
+          {meta?.owner && (
+            <div className={styles.metaItem}>
+              <UserOutlined className={styles.metaIcon} />
+              <span className={styles.metaLabel}>负责人：</span>
+              <span className={styles.metaValue}>{meta.owner}</span>
+            </div>
+          )}
+          {meta?.updateFrequency && (
+            <div className={styles.metaItem}>
+              <SyncOutlined className={styles.metaIcon} />
+              <span className={styles.metaLabel}>更新频率：</span>
+              <span className={styles.metaValue}>{meta.updateFrequency}</span>
+            </div>
+          )}
+          {tags && tags.length > 0 && (
+            <div className={styles.metaItemTags}>
+              <TagOutlined className={styles.metaIcon} />
+              <div className={styles.tags}>
+                {tags.map((tag, index) => (
+                  <span key={index} className={styles.tag}>{tag}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

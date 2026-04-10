@@ -96,6 +96,19 @@
   line-height: 17px;
 }
 
+.configModeBadge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+  background: #fff7ed;
+  padding: 2px 8px;
+  height: 21px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #ea580c;
+  line-height: 17px;
+}
+
 .badgeWarning {
   display: inline-flex;
   align-items: center;
@@ -205,8 +218,14 @@
   cursor: pointer;
   transition: background 0.2s;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #f8fafc;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    color: #94a3b8;
   }
 }
 
@@ -233,6 +252,43 @@
   &:hover {
     background: #1a5cff;
   }
+}
+
+.saveButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 12px 6px;
+  height: 30px;
+  background-image: linear-gradient(
+    90deg,
+    #4d6bfe 0%,
+    #536afe 11.11%,
+    #5969fe 22.22%,
+    #5f68fe 33.33%,
+    #6467fe 44.44%,
+    #6966ff 55.56%,
+    #6e65ff 66.67%,
+    #7264ff 77.78%,
+    #7762ff 88.89%,
+    #7b61ff 100%
+  );
+  font-size: 11px;
+  font-weight: 500;
+  color: #ffffff;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.saveIcon {
+  font-size: 11px;
 }
 
 .metaRow {

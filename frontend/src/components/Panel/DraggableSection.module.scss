@@ -1,0 +1,151 @@
+.section {
+  margin-bottom: 24px;
+  transition: all 0.2s ease;
+
+  &.configMode {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 0;
+
+    &:not(.fixed) {
+      cursor: move;
+      border: 2px solid transparent;
+
+      &:hover {
+        border-color: #1890ff;
+        box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+      }
+    }
+
+    &.fixed {
+      background: #fafafa;
+      border: 1px dashed #d9d9d9;
+      opacity: 0.8;
+    }
+  }
+
+  &.dragging {
+    opacity: 0.8;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    transform: scale(1.02);
+    z-index: 1000;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+
+  .configMode & {
+    padding: 16px 20px;
+    margin-bottom: 0;
+    border-bottom: 1px solid #f0f0f0;
+    align-items: center;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+
+    .configMode & {
+      font-size: 16px;
+      color: #262626;
+    }
+  }
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 400;
+
+  .configMode & {
+    font-size: 12px;
+    color: #8c8c8c;
+  }
+}
+
+.dragHandleWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  cursor: grab;
+  color: #bfbfbf;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #1890ff;
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.fixedIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: #bfbfbf;
+  cursor: not-allowed;
+}
+
+.fixedBadge {
+  font-size: 12px;
+  padding: 2px 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  color: #8c8c8c;
+  margin-left: auto;
+}
+
+.deleteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: #bfbfbf;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: auto;
+  border-radius: 4px;
+
+  &:hover {
+    color: #ff4d4f;
+    background: #fff1f0;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  .configMode & {
+    padding: 20px;
+  }
+}

@@ -1,13 +1,28 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { message } from 'antd';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { BusinessSystem, ExportJSON, GrafanaPanel, GrafanaPanelDatasource } from '@/types';
 import { fetchBusinessSystem, exportReport } from '@/api';
 import { useDate } from '@/context/DateContext';
 import ErrorState from '@/components/ErrorState';
 import PageHeader from '@/components/PageHeader';
 import ExportModal from '@/components/ExportModal';
-import { Section } from '@/components/Panel';
+import { DraggableSection } from '@/components/Panel';
 import {
   SummaryStatusPanel,
   SlaMetricsPanel,
@@ -148,26 +163,43 @@ const renderPanel = (
 
 /**
  * 获取 Panel 的标题和副标题
+ * 根据实际顺序动态生成序号
  */
 const getPanelTitles = (panel: GrafanaPanel, index: number): { title: string; subtitle: string } => {
-  const defaultTitles = [
-    { title: '一、核心结论与风险', subtitle: 'Executive Summary & Risks' },
-    { title: '二、SLA 核心指标', subtitle: 'SLA Core Metrics' },
-    { title: '三、集群核心指标明细', subtitle: 'Cluster Core Metrics Detail' },
-    { title: '四、云区域流量态势', subtitle: 'Cloud Region Traffic Situational Awareness' },
-    { title: '五、评估与计划', subtitle: 'Assessment & Planning' },
-  ];
+  const chineseNumerals = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+  const numeral = chineseNumerals[index] || String(index + 1);
   
   if (panel.title) {
-    const chineseNumerals = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
-    const numeral = chineseNumerals[index] || String(index + 1);
     return {
       title: `${numeral}、${panel.title}`,
       subtitle: panel.description || '',
     };
   }
   
-  return defaultTitles[index] || { title: `Panel ${index + 1}`, subtitle: '' };
+  const defaultSubtitles = [
+    'Executive Summary & Risks',
+    'SLA Core Metrics',
+    'Cluster Core Metrics Detail',
+    'Cloud Region Traffic Situational Awareness',
+    'Assessment & Planning',
+  ];
+  
+  const defaultTitleNames = [
+    '核心结论与风险',
+    'SLA 核心指标',
+    '集群核心指标明细',
+    '云区域流量态势',
+    '评估与计划',
+  ];
+  
+  const titleName = panel.type && defaultTitleNames[index] 
+    ? defaultTitleNames[index] 
+    : `Panel ${index + 1}`;
+  
+  return {
+    title: `${numeral}、${titleName}`,
+    subtitle: defaultSubtitles[index] || '',
+  };
 };
 
 const ReportDetail: React.FC = () => {
@@ -180,9 +212,21 @@ const ReportDetail: React.FC = () => {
   const [exportVisible, setExportVisible] = useState(false);
   const [exportData, setExportData] = useState<ExportJSON | null>(null);
   const [reportStatus, setReportStatus] = useState<'normal' | 'warning' | 'critical' | null>(null);
+  const [isConfigMode, setIsConfigMode] = useState(false);
+  const [panelOrder, setPanelOrder] = useState<string[]>([]);
+  const [deletedPanels, setDeletedPanels] = useState<Set<string>>(new Set());
+  const [operationHistory, setOperationHistory] = useState<Array<{ panelOrder: string[]; deletedPanels: string[] }>>([]);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const isLoadingRef = React.useRef(false);
 
   const effectiveSystemId = system?.datasource_reference?.original_uid || systemId || '';
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const loadSystem = React.useCallback(async () => {
     if (!systemId || isLoadingRef.current) {
@@ -238,9 +282,96 @@ const ReportDetail: React.FC = () => {
     loadReportStatus();
   }, [loadReportStatus]);
 
+  React.useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  const DEFAULT_PANEL_IDS = ['summary', 'sla', 'cluster', 'traffic', 'assessment'];
+
   const panels = useMemo(() => {
-    return system?.datasource_reference?.panels || null;
-  }, [system]);
+    const originalPanels = system?.datasource_reference?.panels || null;
+    
+    if (!originalPanels || originalPanels.length === 0) {
+      return null;
+    }
+
+    if (panelOrder.length === 0) {
+      return originalPanels;
+    }
+
+    return panelOrder.map(id => originalPanels.find(p => p.id === id)).filter(Boolean) as GrafanaPanel[];
+  }, [system, panelOrder]);
+
+  React.useEffect(() => {
+    const savedTemplate = localStorage.getItem(`report-template-${systemId}`);
+    
+    if (savedTemplate) {
+      try {
+        const template = JSON.parse(savedTemplate);
+        if (template.panelOrder) {
+          setPanelOrder(template.panelOrder);
+        }
+        if (template.deletedPanels) {
+          setDeletedPanels(new Set(template.deletedPanels));
+        }
+        return;
+      } catch (e) {
+        console.error('Failed to load saved template:', e);
+      }
+    }
+    
+    if (system?.datasource_reference?.panels && panelOrder.length === 0) {
+      setPanelOrder(system.datasource_reference.panels.map(p => p.id));
+    } else if (!system?.datasource_reference?.panels && panelOrder.length === 0) {
+      setPanelOrder(DEFAULT_PANEL_IDS);
+    }
+  }, [system, systemId, panelOrder.length]);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = panelOrder.indexOf(active.id as string);
+      const newIndex = panelOrder.indexOf(over.id as string);
+      
+      if (oldIndex === -1 || newIndex === -1) {
+        return;
+      }
+      
+      if (oldIndex === 0 || oldIndex === panelOrder.length - 1) {
+        return;
+      }
+      
+      let newOrder: string[];
+      
+      if (newIndex === 0) {
+        newOrder = [...panelOrder];
+        newOrder.splice(oldIndex, 1);
+        newOrder.splice(1, 0, active.id as string);
+      } else if (newIndex === panelOrder.length - 1) {
+        newOrder = [...panelOrder];
+        newOrder.splice(oldIndex, 1);
+        newOrder.splice(panelOrder.length - 2, 0, active.id as string);
+      } else {
+        newOrder = arrayMove(panelOrder, oldIndex, newIndex);
+      }
+      
+      if (JSON.stringify(newOrder) !== JSON.stringify(panelOrder)) {
+        setOperationHistory(prev => [...prev, { 
+          panelOrder: panelOrder, 
+          deletedPanels: Array.from(deletedPanels) 
+        }]);
+        setPanelOrder(newOrder);
+      }
+    }
+  };
 
   if (error && !system) {
     return (
@@ -280,7 +411,19 @@ const ReportDetail: React.FC = () => {
 
     try {
       const data = await exportReport(systemId);
-      setExportData(data);
+      
+      const template = {
+        panelOrder,
+        deletedPanels: Array.from(deletedPanels),
+        savedAt: new Date().toISOString(),
+      };
+      
+      const exportDataWithTemplate = {
+        ...data,
+        panelTemplate: template,
+      };
+      
+      setExportData(exportDataWithTemplate);
       setExportVisible(true);
     } catch (err: any) {
       console.error('Failed to export report:', err);
@@ -293,7 +436,62 @@ const ReportDetail: React.FC = () => {
   };
 
   const handleConfig = () => {
-    console.log('Config clicked');
+    setIsConfigMode(!isConfigMode);
+    if (!isConfigMode) {
+      message.info('已进入配置模式，可拖拽调整面板顺序或删除面板');
+    } else {
+      message.success('配置模式已关闭');
+    }
+  };
+
+  const handleDeletePanel = (panelId: string) => {
+    setOperationHistory(prev => [...prev, { 
+      panelOrder: panelOrder, 
+      deletedPanels: Array.from(deletedPanels) 
+    }]);
+    
+    setDeletedPanels(prev => {
+      const newSet = new Set(prev);
+      newSet.add(panelId);
+      return newSet;
+    });
+    setPanelOrder(prev => prev.filter(id => id !== panelId));
+    message.success('面板已删除');
+  };
+
+  const handleSave = () => {
+    const template = {
+      panelOrder,
+      deletedPanels: Array.from(deletedPanels),
+      savedAt: new Date().toISOString(),
+    };
+    
+    localStorage.setItem(`report-template-${systemId}`, JSON.stringify(template));
+    message.success('模板保存成功');
+    setIsConfigMode(false);
+  };
+
+  const handleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
+
+  const handleUndo = () => {
+    if (operationHistory.length === 0) {
+      message.info('没有可撤销的操作');
+      return;
+    }
+    
+    const lastOperation = operationHistory[operationHistory.length - 1];
+    setPanelOrder(lastOperation.panelOrder);
+    setDeletedPanels(new Set(lastOperation.deletedPanels));
+    setOperationHistory(prev => prev.slice(0, -1));
+    message.success('已撤销上一步操作');
   };
 
   const handleExportClose = () => {
@@ -302,55 +500,136 @@ const ReportDetail: React.FC = () => {
 
   const renderDynamicPanels = () => {
     if (!panels || panels.length === 0) {
+      const defaultPanelsMap = {
+        'summary': { title: '核心结论与风险', subtitle: 'Executive Summary & Risks', component: <SummaryStatusPanel date={selectedDate} systemId={effectiveSystemId} /> },
+        'sla': { title: 'SLA 核心指标', subtitle: 'SLA Core Metrics', component: <SlaMetricsPanel date={selectedDate} systemId={effectiveSystemId} /> },
+        'cluster': { title: '集群核心指标明细', subtitle: 'Cluster Core Metrics Detail', component: <ClusterMetricsPanel date={selectedDate} systemId={effectiveSystemId} /> },
+        'traffic': { title: '云区域流量态势', subtitle: 'Cloud Region Traffic Situational Awareness', component: <TrafficRegionPanel date={selectedDate} systemId={effectiveSystemId} /> },
+        'assessment': { title: '评估与计划', subtitle: 'Assessment & Planning', component: <AssessmentActionPanel reportId={`${effectiveSystemId}-${selectedDate}`} /> },
+      };
+
+      const orderedPanels = panelOrder.length > 0 
+        ? panelOrder.map(id => ({ id, ...defaultPanelsMap[id as keyof typeof defaultPanelsMap] })).filter(p => p.title && !deletedPanels.has(p.id))
+        : DEFAULT_PANEL_IDS.map(id => ({ id, ...defaultPanelsMap[id as keyof typeof defaultPanelsMap] })).filter(p => !deletedPanels.has(p.id));
+
+      const chineseNumerals = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+
+      if (isConfigMode) {
+        return (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={orderedPanels.map(p => p.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {orderedPanels.map((panel, index) => {
+                const isFixed = index === 0 || index === orderedPanels.length - 1;
+                const numeral = chineseNumerals[index] || String(index + 1);
+                const title = `${numeral}、${panel.title}`;
+                return (
+                  <DraggableSection
+                    key={panel.id}
+                    id={panel.id}
+                    title={title}
+                    subtitle={panel.subtitle}
+                    isConfigMode={isConfigMode}
+                    isFixed={isFixed}
+                    onDelete={handleDeletePanel}
+                  >
+                    {panel.component}
+                  </DraggableSection>
+                );
+              })}
+            </SortableContext>
+          </DndContext>
+        );
+      }
+
       return (
         <>
-          <Section title="一、核心结论与风险" subtitle="Executive Summary & Risks">
-            <SummaryStatusPanel
-              date={selectedDate}
-              systemId={effectiveSystemId}
-            />
-          </Section>
-
-          <Section title="二、SLA 核心指标" subtitle="SLA Core Metrics">
-            <SlaMetricsPanel
-              date={selectedDate}
-              systemId={effectiveSystemId}
-            />
-          </Section>
-
-          <Section title="三、集群核心指标明细" subtitle="Cluster Core Metrics Detail">
-            <ClusterMetricsPanel
-              date={selectedDate}
-              systemId={effectiveSystemId}
-            />
-          </Section>
-
-          <Section title="四、云区域流量态势" subtitle="Cloud Region Traffic Situational Awareness">
-            <TrafficRegionPanel
-              date={selectedDate}
-              systemId={effectiveSystemId}
-            />
-          </Section>
-
-          <Section title="五、评估与计划" subtitle="Assessment & Planning">
-            <AssessmentActionPanel
-              reportId={`${effectiveSystemId}-${selectedDate}`}
-            />
-          </Section>
+          {orderedPanels.map((panel, index) => {
+            const isFixed = index === 0 || index === orderedPanels.length - 1;
+            const numeral = chineseNumerals[index] || String(index + 1);
+            const title = `${numeral}、${panel.title}`;
+            return (
+              <DraggableSection
+                key={panel.id}
+                id={panel.id}
+                title={title}
+                subtitle={panel.subtitle}
+                isConfigMode={isConfigMode}
+                isFixed={isFixed}
+                onDelete={handleDeletePanel}
+              >
+                {panel.component}
+              </DraggableSection>
+            );
+          })}
         </>
       );
     }
 
-    return panels.map((panel, index) => {
+    const filteredPanels = panels.filter(panel => !deletedPanels.has(panel.id));
+
+    if (isConfigMode) {
+      return (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={filteredPanels.map(p => p.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {filteredPanels.map((panel, index) => {
+              const { title, subtitle } = getPanelTitles(panel, index);
+              const panelContent = renderPanel(panel, selectedDate, effectiveSystemId);
+              const isFixed = index === 0 || index === filteredPanels.length - 1;
+              
+              if (!panelContent) return null;
+              
+              return (
+                <DraggableSection
+                  key={panel.id || index}
+                  id={panel.id || `panel-${index}`}
+                  title={title}
+                  subtitle={subtitle}
+                  isConfigMode={isConfigMode}
+                  isFixed={isFixed}
+                  onDelete={handleDeletePanel}
+                >
+                  {panelContent}
+                </DraggableSection>
+              );
+            })}
+          </SortableContext>
+        </DndContext>
+      );
+    }
+
+    return filteredPanels.map((panel, index) => {
       const { title, subtitle } = getPanelTitles(panel, index);
       const panelContent = renderPanel(panel, selectedDate, effectiveSystemId);
+      const isFixed = index === 0 || index === filteredPanels.length - 1;
       
       if (!panelContent) return null;
       
       return (
-        <Section key={panel.id || index} title={title} subtitle={subtitle}>
+        <DraggableSection
+          key={panel.id || index}
+          id={panel.id || `panel-${index}`}
+          title={title}
+          subtitle={subtitle}
+          isConfigMode={isConfigMode}
+          isFixed={isFixed}
+          onDelete={handleDeletePanel}
+        >
           {panelContent}
-        </Section>
+        </DraggableSection>
       );
     });
   };
@@ -377,7 +656,13 @@ const ReportDetail: React.FC = () => {
         onExport={handleExport}
         onShare={handleShare}
         onConfig={handleConfig}
+        onSave={handleSave}
+        onFullscreen={handleFullscreen}
+        onUndo={handleUndo}
         onBack={() => navigate('/overview')}
+        isConfigMode={isConfigMode}
+        operationCount={operationHistory.length}
+        isFullscreen={isFullscreen}
       />
 
       <div className={styles.content}>

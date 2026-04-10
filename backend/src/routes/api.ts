@@ -1059,11 +1059,25 @@ router.get('/export/:systemId', async (req: express.Request, res: express.Respon
           description: 'Executive Summary & Risks',
           datasource: {
             type: 'api',
+            uid: 'panel-api',
             endpoint: '/api/panel/summary',
             method: 'GET',
             params: { date: '${date}', systemId: systemId }
           },
           gridPos: { x: 0, y: 0, w: 24, h: 6 },
+          fieldConfig: {
+            defaults: {
+              unit: 'none',
+              thresholds: {
+                mode: 'absolute',
+                steps: [
+                  { color: 'green', value: null },
+                  { color: 'yellow', value: 0.7 },
+                  { color: 'red', value: 0.9 }
+                ]
+              }
+            }
+          },
           options: {
             showInsight: true,
             showClusterInfo: true
@@ -1076,11 +1090,25 @@ router.get('/export/:systemId', async (req: express.Request, res: express.Respon
           description: 'SLA Core Metrics',
           datasource: {
             type: 'api',
+            uid: 'panel-api',
             endpoint: '/api/panel/sla-metrics',
             method: 'GET',
             params: { date: '${date}', systemId: systemId }
           },
           gridPos: { x: 0, y: 6, w: 24, h: 8 },
+          fieldConfig: {
+            defaults: {
+              unit: 'percent',
+              thresholds: {
+                mode: 'absolute',
+                steps: [
+                  { color: 'green', value: null },
+                  { color: 'yellow', value: 80 },
+                  { color: 'red', value: 95 }
+                ]
+              }
+            }
+          },
           options: {
             showHealthStatus: true,
             showThreshold: true
@@ -1093,11 +1121,20 @@ router.get('/export/:systemId', async (req: express.Request, res: express.Respon
           description: 'Cluster Core Metrics Detail',
           datasource: {
             type: 'api',
+            uid: 'panel-api',
             endpoint: '/api/panel/cluster-metrics',
             method: 'GET',
             params: { date: '${date}', systemId: systemId }
           },
           gridPos: { x: 0, y: 14, w: 24, h: 10 },
+          fieldConfig: {
+            defaults: {
+              unit: 'short',
+              custom: {
+                align: 'left'
+              }
+            }
+          },
           options: {
             showTrend: true,
             clusterTabs: ['wx', 'nf']
@@ -1110,11 +1147,17 @@ router.get('/export/:systemId', async (req: express.Request, res: express.Respon
           description: 'Cloud Region Traffic Situational Awareness',
           datasource: {
             type: 'api',
+            uid: 'panel-api',
             endpoint: '/api/panel/region-traffic',
             method: 'GET',
             params: { date: '${date}', systemId: systemId }
           },
           gridPos: { x: 0, y: 24, w: 24, h: 8 },
+          fieldConfig: {
+            defaults: {
+              unit: 'short'
+            }
+          },
           options: {
             showTopRegions: 5,
             clusterTabs: ['wx', 'nf']
@@ -1127,6 +1170,7 @@ router.get('/export/:systemId', async (req: express.Request, res: express.Respon
           description: 'Assessment & Planning',
           datasource: {
             type: 'api',
+            uid: 'panel-api',
             endpoints: {
               assessment: {
                 type: 'api',
@@ -1151,80 +1195,78 @@ router.get('/export/:systemId', async (req: express.Request, res: express.Respon
       ];
       
       return {
-        __meta: {
-          exported_at: new Date().toISOString(),
-          exporter_version: '2.0.0',
-          schema_version: 2,
-          type: 'dashboard'
+        uid: system.id,
+        title: system.name,
+        description: system.description || '',
+        tags: ['运维报表', '日志分析', system.code],
+        style: 'dark',
+        timezone: 'browser',
+        editable: true,
+        graphTooltip: 1,
+        refresh: '1d',
+        time: {
+          from: 'now-24h',
+          to: 'now'
         },
-        dashboard: {
-          uid: system.id,
-          title: system.name,
-          description: system.description || '',
-          tags: ['运维报表', '日志分析', system.code],
-          style: 'dark',
-          timezone: 'browser',
-          refresh: '1d',
-          time: {
-            from: 'now-24h',
-            to: 'now'
-          },
-          timepicker: {
-            refresh_intervals: ['5m', '15m', '30m', '1h', '2h', '1d']
-          },
-          templating: {
-            list: [
-              {
-                name: 'date',
-                type: 'custom',
-                label: '报表日期',
-                current: {
-                  value: new Date().toISOString().split('T')[0],
-                  text: new Date().toISOString().split('T')[0]
-                },
-                options: []
-              },
-              {
-                name: 'systemId',
-                type: 'custom',
-                label: '系统ID',
-                current: {
-                  value: systemId,
-                  text: system.name
-                },
-                options: []
-              },
-              {
-                name: 'reportId',
-                type: 'custom',
-                label: '报表ID',
-                current: {
-                  value: '${systemId}-${date}',
-                  text: '动态生成'
-                },
-                options: []
-              }
-            ]
-          },
-          annotations: {
-            list: []
-          },
-          panels: panels,
-          clusters: {
-            wx_cluster: wxCluster ? { 
-              name: wxCluster.name, 
-              name_en: wxCluster.name_en, 
-              type: wxCluster.type
-            } : null,
-            nf_cluster: nfCluster ? { 
-              name: nfCluster.name, 
-              name_en: nfCluster.name_en, 
-              type: nfCluster.type
-            } : null
-          },
-          version: 1
+        timepicker: {
+          refresh_intervals: ['5m', '15m', '30m', '1h', '2h', '1d'],
+          nowDelay: '1m'
         },
-        overwrite: false
+        templating: {
+          list: [
+            {
+              name: 'date',
+              type: 'custom',
+              label: '报表日期',
+              current: {
+                value: new Date().toISOString().split('T')[0],
+                text: new Date().toISOString().split('T')[0]
+              },
+              options: []
+            },
+            {
+              name: 'systemId',
+              type: 'custom',
+              label: '系统ID',
+              current: {
+                value: systemId,
+                text: system.name
+              },
+              options: []
+            },
+            {
+              name: 'reportId',
+              type: 'custom',
+              label: '报表ID',
+              current: {
+                value: '${systemId}-${date}',
+                text: '动态生成'
+              },
+              options: []
+            }
+          ]
+        },
+        annotations: {
+          list: []
+        },
+        links: [],
+        panels: panels,
+        clusters: {
+          wx_cluster: wxCluster ? { 
+            name: wxCluster.name, 
+            name_en: wxCluster.name_en, 
+            type: wxCluster.type,
+            description: '主要生产集群'
+          } : null,
+          nf_cluster: nfCluster ? { 
+            name: nfCluster.name, 
+            name_en: nfCluster.name_en, 
+            type: nfCluster.type,
+            description: '备用生产集群'
+          } : null
+        },
+        version: 1,
+        schemaVersion: 36
       };
     };
     
@@ -1261,7 +1303,13 @@ router.get('/export/:systemId', async (req: express.Request, res: express.Respon
 
 router.post('/import', async (req: express.Request, res: express.Response) => {
   try {
+    console.log('Import request received');
+    console.log('isUseSupabaseEnabled:', isUseSupabaseEnabled());
+    console.log('isDatabaseConnected:', isDatabaseConnected());
+    console.log('getSupabase:', !!getSupabase());
+    
     if (!isUseSupabaseEnabled()) {
+      console.log('Import failed: DATABASE_DISABLED');
       return res.status(503).json({ 
         success: false, 
         error: '未启用数据库服务，无法导入数据',
@@ -1271,6 +1319,7 @@ router.post('/import', async (req: express.Request, res: express.Response) => {
 
     const supabaseClient = getSupabase();
     if (!supabaseClient) {
+      console.log('Import failed: DATABASE_NOT_INITIALIZED');
       return res.status(503).json({ 
         success: false, 
         error: '数据库客户端未初始化',
@@ -1278,15 +1327,17 @@ router.post('/import', async (req: express.Request, res: express.Response) => {
       });
     }
 
-    const connected = await testConnection();
-    if (!connected) {
+    // 移除 testConnection 检查，直接使用 isDatabaseConnected
+    if (!isDatabaseConnected()) {
+      console.log('Import failed: DATABASE_NOT_CONNECTED');
       return res.status(503).json({ 
         success: false, 
-        error: '数据库连接失败，请稍后重试',
-        code: 'DATABASE_CONNECTION_FAILED' 
+        error: '数据库未连接，请稍后重试',
+        code: 'DATABASE_NOT_CONNECTED' 
       });
     }
 
+    console.log('All checks passed, processing import...');
     const importData = req.body;
 
     if (!importData || typeof importData !== 'object') {

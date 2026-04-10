@@ -86,6 +86,12 @@ const ReportOverview: React.FC = () => {
   const handleImport = async (data: Record<string, unknown>, mode: 'created' | 'updated') => {
     try {
       const result = await importReport(data as unknown as ExportJSON);
+      
+      if (data.panelTemplate) {
+        const systemId = result.details.business_system.id;
+        localStorage.setItem(`report-template-${systemId}`, JSON.stringify(data.panelTemplate));
+      }
+      
       const message = mode === 'updated' 
         ? `报表更新成功：${result.details.business_system.name}`
         : `报表创建成功：${result.details.business_system.name}`;
