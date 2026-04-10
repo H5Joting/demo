@@ -6,7 +6,7 @@ import { useDate } from '@/context/DateContext';
 import styles from './Header.module.scss';
 
 const Header: React.FC = () => {
-  const { selectedDate, setSelectedDate, availableDates, loading, businessSystem, dbError } = useDate();
+  const { selectedDate, setSelectedDate, loading, dbError } = useDate();
 
   const handleDateChange = (date: dayjs.Dayjs | null) => {
     if (date) {
@@ -18,11 +18,6 @@ const Header: React.FC = () => {
     if (!current) return true;
     const today = dayjs().startOf('day');
     return current.isAfter(today) || current.isSame(today);
-  };
-
-  const getStatusInfo = (dateStr: string) => {
-    const dateInfo = availableDates.find(d => d.report_date === dateStr);
-    return dateInfo?.system_status || 'normal';
   };
 
   return (
@@ -47,8 +42,8 @@ const Header: React.FC = () => {
             </svg>
           </div>
           <div className={styles.logoText}>
-            <h1>{businessSystem?.name || '统一日志中心'}</h1>
-            <span>{businessSystem?.description || 'Unified Log Analysis System'}</span>
+            <h1>统一日志中心</h1>
+            <span>Unified Log Analysis System</span>
           </div>
         </div>
 

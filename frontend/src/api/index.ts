@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ApiResponse, DashboardSummary, LogMetric, CloudRegion, Cluster, BusinessSystem, Assessment, ActionPlan } from '@/types';
+import { ApiResponse, DashboardSummary, LogMetric, CloudRegion, Cluster, BusinessSystem, Assessment, ActionPlan, ExportJSON, ImportResult } from '@/types';
 
 const api = axios.create({
   baseURL: '/api',
@@ -20,6 +20,13 @@ export const fetchBusinessSystem = async (id: string): Promise<BusinessSystem> =
     throw new Error(response.data.error || 'Failed to fetch business system');
   }
   return response.data.data;
+};
+
+export const deleteBusinessSystem = async (id: string): Promise<void> => {
+  const response = await api.delete<ApiResponse<void>>(`/business-systems/${id}`);
+  if (!response.data.success) {
+    throw new Error(response.data.error || '删除失败');
+  }
 };
 
 export const fetchDashboardSummary = async (date: string, businessSystemId?: string): Promise<DashboardSummary> => {
@@ -59,12 +66,13 @@ export interface BusinessSystemOverview {
   code: string;
   description: string;
   status: 'active' | 'inactive';
+  system_status: 'normal' | 'warning' | 'critical';
   metrics: SystemMetric[];
   report_date: string;
 }
 
 export const fetchBusinessSystemsOverview = async (): Promise<BusinessSystemOverview[]> => {
-  const response = await api.get<ApiResponse<BusinessSystemOverview[]>>('/business-systems-overview');
+  const response = await api.get<ApiResponse<BusinessSystemOverview[]>>('/business-systems/overview');
   if (!response.data.success || !response.data.data) {
     throw new Error(response.data.error || 'Failed to fetch business systems overview');
   }
@@ -172,6 +180,22 @@ export const fetchActionPlans = async (reportId?: string): Promise<ActionPlan[]>
   const response = await api.get<ApiResponse<ActionPlan[]>>('/action-plans', { params });
   if (!response.data.success || !response.data.data) {
     throw new Error(response.data.error || 'Failed to fetch action plans');
+  }
+  return response.data.data;
+};
+
+export const exportReport = async (systemId: string): Promise<ExportJSON> => {
+  const response = await api.get<ApiResponse<ExportJSON>>(`/export/${systemId}`);
+  if (!response.data.success || !response.data.data) {
+    throw new Error(response.data.error || 'Failed to export report');
+  }
+  return response.data.data;
+};
+
+export const importReport = async (data: ExportJSON): Promise<ImportResult> => {
+  const response = await api.post<ApiResponse<ImportResult>>('/import', data);
+  if (!response.data.success || !response.data.data) {
+    throw new Error(response.data.error || 'Failed to import report');
   }
   return response.data.data;
 };

@@ -2,10 +2,10 @@ import 'dotenv/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 
 console.log('SUPABASE_URL:', supabaseUrl ? 'Set' : 'Not set');
-console.log('SUPABASE_ANON_KEY:', supabaseKey ? 'Set' : 'Not set');
+console.log('SUPABASE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Service Role Key' : (process.env.SUPABASE_ANON_KEY ? 'Anon Key' : 'Not set'));
 
 const notConfigured = !supabaseUrl || !supabaseKey;
 
@@ -100,6 +100,10 @@ export const isDatabaseConnected = (): boolean => {
 
 export const resetConnection = () => {
   connectionFailed = false;
+};
+
+export const setConnectionFailed = () => {
+  connectionFailed = true;
 };
 
 export const testConnection = async (): Promise<boolean> => {

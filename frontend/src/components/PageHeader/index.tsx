@@ -1,5 +1,5 @@
 import React from 'react';
-import { RightOutlined, ReloadOutlined, DownloadOutlined, ShareAltOutlined, SettingOutlined, CalendarOutlined, ClockCircleOutlined, UserOutlined, SyncOutlined, TagOutlined, ExclamationCircleOutlined, LeftOutlined } from '@ant-design/icons';
+import { RightOutlined, ReloadOutlined, DownloadOutlined, ShareAltOutlined, SettingOutlined, CalendarOutlined, ClockCircleOutlined, UserOutlined, SyncOutlined, TagOutlined, LeftOutlined } from '@ant-design/icons';
 import styles from './PageHeader.module.scss';
 
 export interface PageHeaderProps {
@@ -62,10 +62,21 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             <div className={styles.badges}>
               {typeBadge && <span className={styles.badgeCyan}>{typeBadge}</span>}
               {statusBadge && (
-                <span className={statusBadge === 'warning' ? styles.badgeWarning : statusBadge === 'error' ? styles.badgeError : styles.badgeSuccess}>
-                  {statusBadge === 'warning' && <ExclamationCircleOutlined className={styles.warningIcon} />}
-                  {statusBadge === 'warning' ? '警告' : statusBadge === 'error' ? '异常' : '正常'}
-                </span>
+                <div 
+                  className={styles.statusBadge}
+                  style={{ 
+                    backgroundColor: statusBadge === 'warning' ? '#fffbeb' : statusBadge === 'error' ? '#fef2f2' : '#ecfdf5',
+                    borderColor: statusBadge === 'warning' ? '#fde68a' : statusBadge === 'error' ? '#fecaca' : '#d0fae5'
+                  }}
+                >
+                  <span 
+                    className={styles.statusDot}
+                    style={{ backgroundColor: statusBadge === 'warning' ? '#f59e0b' : statusBadge === 'error' ? '#ef4444' : '#00bc7d' }}
+                  />
+                  <span style={{ color: statusBadge === 'warning' ? '#b45309' : statusBadge === 'error' ? '#dc2626' : '#009966' }}>
+                    {statusBadge === 'warning' ? '警告' : statusBadge === 'error' ? '异常' : '正常'}
+                  </span>
+                </div>
               )}
             </div>
             <h1 className={styles.title}>{title}</h1>

@@ -4,6 +4,12 @@ export interface BusinessSystem {
   code: string;
   description: string;
   status: 'active' | 'inactive';
+  datasource_reference?: {
+    original_uid: string;
+    datasource_type: string;
+    panels?: GrafanaPanel[];
+    imported_at: string;
+  } | null;
   created_at: string;
   updated_at: string;
 }
@@ -118,4 +124,143 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
+}
+
+export interface ExportMetadata {
+  exported_at: string;
+  exporter_version: string;
+  schema_version: number;
+}
+
+export interface ExportClusterConfig {
+  name: string;
+  name_en: string;
+  type: 'wx' | 'nf';
+  description?: string;
+}
+
+export interface ExportMetricConfig {
+  metric_name: string;
+  metric_name_en: string;
+  layer: 'access' | 'buffer' | 'storage' | 'application';
+  unit: string;
+  sla_threshold: number;
+}
+
+export interface ExportPanelConfig {
+  type: 'metrics_table' | 'region_traffic' | 'assessment' | 'action_plan';
+  title: string;
+  description?: string;
+  visible: boolean;
+  order: number;
+}
+
+export interface ExportDatasourceRef {
+  type: 'supabase' | 'mock';
+  uid: string;
+  description: string;
+}
+
+export interface ExportQueryConfig {
+  table: string;
+  filters?: Record<string, string[]>;
+  sort?: {
+    field: string;
+    order: 'asc' | 'desc';
+  };
+  limit?: number;
+}
+
+export interface ExportPanelDatasource {
+  panel_type: string;
+  title: string;
+  datasource: ExportDatasourceRef;
+  query: ExportQueryConfig;
+  visible: boolean;
+  order: number;
+}
+
+export interface GrafanaPanelDatasource {
+  type: 'api' | 'database';
+  endpoint?: string;
+  method?: 'GET' | 'POST';
+  params?: Record<string, any>;
+  endpoints?: {
+    assessment?: GrafanaPanelDatasource;
+    actionPlan?: GrafanaPanelDatasource;
+  };
+}
+
+export interface GrafanaPanel {
+  id: string;
+  type: 'summary_status' | 'sla_metrics' | 'cluster_metrics' | 'region_traffic' | 'assessment_action';
+  title: string;
+  description?: string;
+  datasource: GrafanaPanelDatasource;
+  gridPos: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  };
+  options?: Record<string, any>;
+}
+
+export interface GrafanaTemplatingVariable {
+  name: string;
+  type: 'custom' | 'query';
+  label?: string;
+  current: {
+    value: string;
+    text: string;
+  };
+  options: any[];
+}
+
+export interface GrafanaDashboard {
+  uid: string;
+  title: string;
+  description?: string;
+  tags?: string[];
+  style?: 'dark' | 'light';
+  timezone?: string;
+  refresh?: string;
+  time?: {
+    from: string;
+    to: string;
+  };
+  timepicker?: {
+    refresh_intervals: string[];
+  };
+  templating?: {
+    list: GrafanaTemplatingVariable[];
+  };
+  annotations?: {
+    list: any[];
+  };
+  panels: GrafanaPanel[];
+  clusters?: {
+    wx_cluster: ExportClusterConfig | null;
+    nf_cluster: ExportClusterConfig | null;
+  };
+  version?: number;
+}
+
+export interface ExportJSON {
+  __meta: ExportMetadata;
+  dashboard: GrafanaDashboard;
+  overwrite?: boolean;
+}
+
+export interface ImportResult {
+  message: string;
+  mode: 'created' | 'updated';
+  imported: {
+    business_system: number;
+    clusters: number;
+  };
+  details: {
+    business_system: BusinessSystem;
+    clusters: Cluster[];
+  };
 }

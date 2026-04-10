@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchBusinessSystemsOverview, BusinessSystemOverview } from '@/api';
+import { fetchBusinessSystemsOverview, BusinessSystemOverview, importReport, deleteBusinessSystem } from '@/api';
 import ReportCard from '@/components/ReportCard';
 import StatCard from '@/components/StatCard';
+import ImportModal from '@/components/ImportModal';
 import styles from './ReportOverview.module.scss';
+import type { ExportJSON } from '@/types';
 
 interface StatCardData {
   icon: React.ReactNode;
@@ -19,10 +21,12 @@ const ReportOverview: React.FC = () => {
   const navigate = useNavigate();
   const [systems, setSystems] = useState<BusinessSystemOverview[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [_refreshing, setRefreshing] = useState(false);
+  const [_error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [importVisible, setImportVisible] = useState(false);
+  const isLoadingRef = useRef(false);
 
   const getReportDateTime = () => {
     const now = new Date();
@@ -42,7 +46,13 @@ const ReportOverview: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const loadSystems = async (isRefresh = false) => {
+  const loadSystems = useCallback(async (isRefresh = false) => {
+    if (isLoadingRef.current && !isRefresh) {
+      return;
+    }
+    
+    isLoadingRef.current = true;
+    
     try {
       if (isRefresh) {
         setRefreshing(true);
@@ -65,12 +75,32 @@ const ReportOverview: React.FC = () => {
     } finally {
       setLoading(false);
       setRefreshing(false);
+      isLoadingRef.current = false;
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadSystems();
-  }, []);
+  }, [loadSystems]);
+
+  const handleImport = async (data: Record<string, unknown>, mode: 'created' | 'updated') => {
+    try {
+      const result = await importReport(data as unknown as ExportJSON);
+      const message = mode === 'updated' 
+        ? `报表更新成功：${result.details.business_system.name}`
+        : `报表创建成功：${result.details.business_system.name}`;
+      showToast(message, 'success');
+      await loadSystems();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '导入失败，请重试';
+      showToast(errorMessage, 'error');
+    }
+  };
+
+  const handleDelete = async (systemId: string) => {
+    await deleteBusinessSystem(systemId);
+    await loadSystems();
+  };
 
   const statCards: StatCardData[] = [
     {
@@ -96,9 +126,9 @@ const ReportOverview: React.FC = () => {
           <path d="M5.25 9L7.5 11.25L12.75 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       ),
-      value: systems.length > 0 ? systems.filter(s => s.status === 'active').length : null,
+      value: systems.length > 0 ? systems.filter(s => s.system_status === 'normal').length : null,
       label: '运行正常',
-      subLabel: systems.length > 0 ? `占比 ${Math.round(systems.filter(s => s.status === 'active').length / systems.length * 100)}%` : '占比 -',
+      subLabel: systems.length > 0 ? `占比 ${Math.round(systems.filter(s => s.system_status === 'normal').length / systems.length * 100)}%` : '占比 -',
       color: '#16a34a',
       bgColor: '#ecfdf5',
       iconBg: '#d0fae5'
@@ -111,7 +141,7 @@ const ReportOverview: React.FC = () => {
           <path d="M7.245 2.24998L1.2375 12.9C1.08244 13.1749 1.0003 13.4854 1.00001 13.8014C0.999717 14.1173 1.08128 14.4279 1.23584 14.7031C1.39041 14.9783 1.61248 15.2084 1.88029 15.3707C2.1481 15.533 2.45265 15.6218 2.7645 15.6285H15.2355C15.5474 15.6218 15.8519 15.533 16.1197 15.3707C16.3875 15.2084 16.6096 14.9783 16.7642 14.7031C16.9187 14.4279 17.0003 14.1173 17 13.8014C16.9997 13.4854 16.9176 13.1749 16.7625 12.9L10.755 2.24998C10.5944 1.98327 10.3685 1.76189 10.099 1.60756C9.82945 1.45323 9.52513 1.37134 9.21525 1.36987C8.90537 1.3684 8.6003 1.44741 8.32936 1.59925C8.05842 1.75108 7.83066 1.97039 7.66763 2.2356L7.245 2.24998Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       ),
-      value: systems.length > 0 ? Math.floor(systems.length * 0.25) : null,
+      value: systems.length > 0 ? systems.filter(s => s.system_status === 'warning').length : null,
       label: '存在警告',
       subLabel: '需要关注',
       color: '#ca8a04',
@@ -126,7 +156,7 @@ const ReportOverview: React.FC = () => {
           <path d="M6.75 6.75L11.25 11.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       ),
-      value: systems.length > 0 ? 0 : null,
+      value: systems.length > 0 ? systems.filter(s => s.system_status === 'critical').length : null,
       label: '运行异常',
       subLabel: '需要立即处理',
       color: '#dc2626',
@@ -190,6 +220,16 @@ const ReportOverview: React.FC = () => {
               className={styles.searchInput}
             />
           </div>
+          <button 
+            className={styles.importButton}
+            onClick={() => setImportVisible(true)}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 1.5v9M4.5 7.5L8 11l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M2 11.5v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            导入
+          </button>
           <div className={styles.viewToggle}>
             <button className={`${styles.viewBtn} ${styles.active}`}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -231,7 +271,7 @@ const ReportOverview: React.FC = () => {
                 reportType={reportConfig.type}
                 reportTypeColor={reportConfig.color}
                 reportTypeBg={reportConfig.bg}
-                status={system.status === 'active' ? 'normal' : 'offline'}
+                status={system.system_status === 'normal' ? 'normal' : system.system_status === 'warning' ? 'warning' : system.system_status === 'critical' ? 'critical' : 'offline'}
                 title={system.name}
                 description={system.description}
                 metrics={system.metrics.map(m => ({
@@ -243,6 +283,7 @@ const ReportOverview: React.FC = () => {
                 date={system.report_date || reportDateTime}
                 systemId={system.id}
                 onViewDetail={(id) => navigate(`/overview/${id}`)}
+                onDelete={handleDelete}
               />
             );
           })
@@ -266,6 +307,12 @@ const ReportOverview: React.FC = () => {
           <span>{toast.message}</span>
         </div>
       )}
+
+      <ImportModal
+        visible={importVisible}
+        onClose={() => setImportVisible(false)}
+        onSuccess={handleImport}
+      />
     </>
   );
 };

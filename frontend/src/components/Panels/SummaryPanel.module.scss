@@ -1,0 +1,132 @@
+.summaryCard {
+  flex: 1;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #eff6ff;
+  border-radius: 4px;
+}
+
+.clusterInfo {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.cluster {
+  flex: 1;
+}
+
+.clusterLabel {
+  display: inline-block;
+  background: #f8fafc;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #90a1b9;
+  margin-bottom: 8px;
+}
+
+.epsValue {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.value {
+  font-size: 30px;
+  font-weight: 700;
+  color: #155dfc;
+}
+
+.rate {
+  font-size: 12px;
+  font-weight: 700;
+  color: #00bc7d;
+}
+
+.description {
+  font-size: 14px;
+  color: #62748e;
+  line-height: 23px;
+  margin: 0;
+}
+
+.divider {
+  width: 1px;
+  background: #f1f5f9;
+}
+
+.insightBox {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.insightHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.insightIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: #eef2ff;
+  border-radius: 4px;
+  color: #4f39f6;
+}
+
+.insightHeaderText {
+  font-size: 14px;
+  font-weight: 500;
+  color: #4f39f6;
+}
+
+.insightText {
+  font-size: 14px;
+  color: #45556c;
+  line-height: 23px;
+  margin: 0;
+}
+
+.viewBtn {
+  padding: 0;
+  height: auto;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #90a1b9;
+
+  &:hover {
+    color: #155dfc;
+  }
+}
+
+.noData {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+}

@@ -17,9 +17,6 @@ const ExecutiveSummary: React.FC<Props> = ({
   report,
   wxCluster,
   nfCluster,
-  wxMetrics,
-  nfMetrics,
-  businessSystemId,
 }) => {
   if (!report) {
     return (

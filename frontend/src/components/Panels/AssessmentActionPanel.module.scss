@@ -1,0 +1,246 @@
+.contentCard {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+
+  :global(.ant-card-body) {
+    display: flex;
+    padding: 0;
+  }
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.leftPanel {
+  flex: 1;
+  border-right: 1px solid #f1f5f9;
+  padding: 32px;
+}
+
+.rightPanel {
+  flex: 1;
+  background: #f8fafc80;
+  padding: 32px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1d293d;
+    margin: 0;
+  }
+}
+
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #eff6ff;
+  border-radius: 4px;
+  padding: 6px;
+
+  svg {
+    color: #155dfc;
+  }
+}
+
+.assessmentList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.assessmentItem {
+  .assessmentTitle {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1d293d;
+    margin-bottom: 8px;
+  }
+
+  .assessmentContent {
+    display: flex;
+    gap: 6px;
+    margin-left: 24px;
+
+    .bullet {
+      font-size: 16px;
+      color: #90a1b9;
+      line-height: 23px;
+    }
+
+    p {
+      font-size: 14px;
+      line-height: 23px;
+      margin: 0;
+    }
+
+    .statusNormal {
+      color: #62748e;
+    }
+
+    .statusWarning {
+      color: #62748e;
+
+      :global(.highlight) {
+        font-weight: 700;
+        color: #fb2c36;
+      }
+    }
+
+    .statusCritical {
+      color: #fb2c36;
+    }
+  }
+}
+
+.noData {
+  font-size: 14px;
+  color: #90a1b9;
+  text-align: center;
+  padding: 24px;
+}
+
+.insightBox {
+  margin-top: 16px;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.insightHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+
+  span {
+    font-size: 14px;
+    font-weight: 500;
+    color: #4f39f6;
+  }
+}
+
+.insightIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #eef2ff;
+  border-radius: 4px;
+  padding: 4px;
+
+  svg {
+    font-size: 16px;
+    color: #4f39f6;
+  }
+}
+
+.insightText {
+  font-size: 14px;
+  color: #45556c;
+  line-height: 23px;
+  margin: 0 0 12px;
+}
+
+.viewBtn {
+  padding: 0;
+  height: auto;
+  font-size: 12px;
+  color: #90a1b9;
+
+  &:hover {
+    color: #155dfc;
+  }
+}
+
+.actionPlanList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.actionPlan {
+  margin-bottom: 24px;
+}
+
+.priorityBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 8px;
+
+  span {
+    font-size: 10px;
+    font-weight: 700;
+  }
+}
+
+.priorityHigh {
+  background: #ffb900;
+
+  span {
+    color: #7b3306;
+  }
+}
+
+.priorityMedium {
+  background: #155dfc;
+
+  span {
+    color: #fff;
+  }
+}
+
+.priorityLow {
+  background: #e2e8f0;
+
+  span {
+    color: #62748e;
+  }
+}
+
+.planItems {
+  margin-left: 40px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.planItem {
+  display: flex;
+  gap: 6px;
+
+  .bullet {
+    font-size: 16px;
+    color: #90a1b9;
+    line-height: 20px;
+  }
+
+  p {
+    font-size: 14px;
+    font-weight: 500;
+    color: #314158;
+    line-height: 20px;
+    margin: 0;
+  }
+}

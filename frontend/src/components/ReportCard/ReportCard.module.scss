@@ -6,7 +6,6 @@
   background: #ffffff;
   padding: 20px;
   min-width: 0;
-  height: 351px;
   box-sizing: border-box;
 }
 
@@ -16,6 +15,31 @@
   justify-content: space-between;
   width: 100%;
   margin-bottom: 4px;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.deleteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #90a1b9;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #fef2f2;
+    color: #dc2626;
+  }
 }
 
 .reportTypeBadge {
@@ -81,7 +105,7 @@
 }
 
 .cardDesc {
-  margin: 12px 0 0 0;
+  margin: 12px 0 12px 0;
   font-size: 12px;
   line-height: 20px;
   color: #62748e;
@@ -97,7 +121,6 @@
 .metricsContainer {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
   gap: 12px;
   width: 100%;
   margin-top: auto;

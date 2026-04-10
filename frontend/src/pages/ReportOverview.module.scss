@@ -716,6 +716,32 @@
   }
 }
 
+.importButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  height: 38px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #eff6ff;
+    border-color: #155dfc;
+    color: #155dfc;
+  }
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
 .filterBtn {
   display: flex;
   align-items: center;

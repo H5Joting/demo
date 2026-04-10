@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { fetchAvailableDates, fetchBusinessSystem } from '@/api';
-import { BusinessSystem } from '@/types';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { fetchAvailableDates } from '@/api';
 
 interface DateContextType {
   selectedDate: string;
@@ -8,8 +7,8 @@ interface DateContextType {
   availableDates: { report_date: string; system_status: string }[];
   loading: boolean;
   businessSystemId: string | null;
-  businessSystem: BusinessSystem | null;
   dbError: boolean;
+  loadAvailableDates: () => Promise<void>;
 }
 
 const DateContext = createContext<DateContextType | undefined>(undefined);
@@ -25,53 +24,49 @@ const getYesterday = () => {
 export const DateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [selectedDate, setSelectedDate] = useState<string>(getYesterday);
   const [availableDates, setAvailableDates] = useState<{ report_date: string; system_status: string }[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [businessSystemId, setBusinessSystemId] = useState<string | null>(() => {
+  const [loading, setLoading] = useState(false);
+  const [businessSystemId] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('businessSystemId') || DEFAULT_BUSINESS_SYSTEM_ID;
   });
-  const [businessSystem, setBusinessSystem] = useState<BusinessSystem | null>(null);
   const [dbError, setDbError] = useState(false);
 
-  useEffect(() => {
-    const loadDates = async () => {
-      try {
-        setLoading(true);
-        setDbError(false);
-        const dates = await fetchAvailableDates(businessSystemId || undefined);
-        setAvailableDates(dates);
-        const yesterday = getYesterday();
-        const hasYesterday = dates.some(d => d.report_date === yesterday);
-        if (hasYesterday) {
-          setSelectedDate(yesterday);
-        } else if (dates.length > 0) {
-          setSelectedDate(dates[0].report_date);
-        }
-      } catch (error: any) {
-        console.error('Failed to load available dates:', error);
-        if (error?.response?.data?.code === 'DATABASE_ERROR') {
-          setDbError(true);
-        }
-      } finally {
-        setLoading(false);
+  const hasLoadedDatesRef = useRef(false);
+
+  const loadAvailableDates = useCallback(async () => {
+    if (hasLoadedDatesRef.current) return;
+    
+    try {
+      setLoading(true);
+      setDbError(false);
+      const dates = await fetchAvailableDates(businessSystemId || undefined);
+      setAvailableDates(dates);
+      const yesterday = getYesterday();
+      const hasYesterday = dates.some(d => d.report_date === yesterday);
+      if (hasYesterday) {
+        setSelectedDate(yesterday);
+      } else if (dates.length > 0) {
+        setSelectedDate(dates[0].report_date);
       }
-    };
-    loadDates();
+      hasLoadedDatesRef.current = true;
+    } catch (error: any) {
+      console.error('Failed to load available dates:', error);
+      if (error?.response?.data?.code === 'DATABASE_ERROR') {
+        setDbError(true);
+      }
+    } finally {
+      setLoading(false);
+    }
   }, [businessSystemId]);
 
   useEffect(() => {
-    const loadBusinessSystem = async () => {
-      if (businessSystemId) {
-        try {
-          const system = await fetchBusinessSystem(businessSystemId);
-          setBusinessSystem(system);
-        } catch (error) {
-          console.error('Failed to load business system:', error);
-        }
-      }
-    };
-    loadBusinessSystem();
-  }, [businessSystemId]);
+    const path = window.location.pathname;
+    const shouldLoadDates = path.includes('/dashboard') || path.includes('/overview/');
+    
+    if (shouldLoadDates) {
+      loadAvailableDates();
+    }
+  }, [loadAvailableDates]);
 
   return (
     <DateContext.Provider value={{ 
@@ -80,8 +75,8 @@ export const DateProvider: React.FC<{ children: React.ReactNode }> = ({ children
       availableDates, 
       loading,
       businessSystemId,
-      businessSystem,
-      dbError
+      dbError,
+      loadAvailableDates
     }}>
       {children}
     </DateContext.Provider>

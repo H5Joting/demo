@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Popconfirm, message } from 'antd';
+import { DeleteOutlined } from '@ant-design/icons';
 import { formatValue } from '@/utils/format';
 import styles from './ReportCard.module.scss';
 
@@ -22,6 +24,7 @@ interface ReportCardProps {
   date?: string;
   systemId?: string;
   onViewDetail?: (systemId: string) => void;
+  onDelete?: (systemId: string) => Promise<void>;
 }
 
 const ReportCard: React.FC<ReportCardProps> = ({
@@ -36,8 +39,11 @@ const ReportCard: React.FC<ReportCardProps> = ({
   time,
   date,
   systemId,
-  onViewDetail
+  onViewDetail,
+  onDelete
 }) => {
+  const [deleting, setDeleting] = useState(false);
+
   const statusConfig = {
     normal: { bg: '#ecfdf5', border: '#d0fae5', text: '#009966', dot: '#00bc7d', label: '正常' },
     warning: { bg: '#fffbeb', border: '#fde68a', text: '#b45309', dot: '#f59e0b', label: '警告' },
@@ -77,6 +83,20 @@ const ReportCard: React.FC<ReportCardProps> = ({
     return '#62748e';
   };
 
+  const handleDelete = async () => {
+    if (!systemId || !onDelete) return;
+    
+    setDeleting(true);
+    try {
+      await onDelete(systemId);
+      message.success('删除成功');
+    } catch (error) {
+      message.error('删除失败');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className={styles.systemCard}>
       <div className={styles.cardHeader}>
@@ -86,15 +106,31 @@ const ReportCard: React.FC<ReportCardProps> = ({
         >
           {reportType}
         </div>
-        <div 
-          className={styles.statusBadge}
-          style={{ 
-            backgroundColor: currentStatus.bg, 
-            borderColor: currentStatus.border 
-          }}
-        >
-          <span className={styles.statusDot} style={{ backgroundColor: currentStatus.dot }} />
-          <span style={{ color: currentStatus.text }}>{currentStatus.label}</span>
+        <div className={styles.headerRight}>
+          <div 
+            className={styles.statusBadge}
+            style={{ 
+              backgroundColor: currentStatus.bg, 
+              borderColor: currentStatus.border 
+            }}
+          >
+            <span className={styles.statusDot} style={{ backgroundColor: currentStatus.dot }} />
+            <span style={{ color: currentStatus.text }}>{currentStatus.label}</span>
+          </div>
+          {onDelete && (
+            <Popconfirm
+              title="确认删除"
+              description="确定要删除此报表吗？删除后无法恢复。"
+              onConfirm={handleDelete}
+              okText="确认"
+              cancelText="取消"
+              okButtonProps={{ loading: deleting, danger: true }}
+            >
+              <button className={styles.deleteBtn} title="删除报表">
+                <DeleteOutlined />
+              </button>
+            </Popconfirm>
+          )}
         </div>
       </div>
       

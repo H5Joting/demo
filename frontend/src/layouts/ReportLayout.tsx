@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet } from 'react-router-dom';
 import { fetchDataSourceStatus, toggleDataSource, DataSourceStatus } from '@/api';
 import styles from './ReportLayout.module.scss';
@@ -7,17 +7,26 @@ const ReportLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [dataSourceStatus, setDataSourceStatus] = useState<DataSourceStatus>({ enabled: false, source: 'mock', connected: false });
+  const isLoadingRef = useRef(false);
 
   useEffect(() => {
     loadDataSourceStatus();
   }, []);
 
   const loadDataSourceStatus = async () => {
+    if (isLoadingRef.current) {
+      return;
+    }
+    
+    isLoadingRef.current = true;
+    
     try {
       const status = await fetchDataSourceStatus();
       setDataSourceStatus(status);
     } catch (error) {
       console.error('Failed to load data source status:', error);
+    } finally {
+      isLoadingRef.current = false;
     }
   };
 

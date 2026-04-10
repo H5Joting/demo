@@ -1,0 +1,47 @@
+.modal {
+  :global {
+    .ant-modal-header {
+      border-bottom: 1px solid var(--border, #e2e8f0);
+      padding: 16px 24px;
+    }
+
+    .ant-modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--foreground, #1d293d);
+    }
+
+    .ant-modal-body {
+      padding: 0;
+    }
+
+    .ant-modal-footer {
+      border-top: 1px solid var(--border, #e2e8f0);
+      padding: 12px 24px;
+    }
+  }
+}
+
+.previewContainer {
+  max-height: 480px;
+  overflow: auto;
+  background: var(--background-muted, #f8fafc);
+  border-radius: 0;
+}
+
+.codeBlock {
+  margin: 0;
+  padding: 20px 24px;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--foreground, #1d293d);
+  background: transparent;
+  white-space: pre-wrap;
+  word-break: break-word;
+  tab-size: 2;
+
+  code {
+    font-family: inherit;
+  }
+}

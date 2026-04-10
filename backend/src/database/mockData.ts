@@ -521,6 +521,278 @@ const cloudRegions = generateCloudRegions();
 const assessments = generateAssessments(dailyReports);
 const actionPlans = generateActionPlans(dailyReports);
 
+let cachedReportDate: string | null = null;
+let cachedDailyReports = dailyReports;
+let cachedLogMetrics = logMetrics;
+let cachedCloudRegions = cloudRegions;
+let cachedAssessments = assessments;
+let cachedActionPlans = actionPlans;
+
+const getOrCreateDailyData = (targetDate: string) => {
+  if (cachedReportDate === targetDate) {
+    return {
+      reports: cachedDailyReports,
+      metrics: cachedLogMetrics,
+      regions: cachedCloudRegions,
+      assessments: cachedAssessments,
+      actionPlans: cachedActionPlans
+    };
+  }
+
+  const originalDateFn = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().split('T')[0];
+  };
+
+  const originalGenerateDailyReports = (): MockDailyReport[] => {
+    const reports: MockDailyReport[] = [];
+    const dateStr = targetDate;
+    
+    const systemConfigs: { [code: string]: { 
+      wxEps: number; 
+      nfEps: number;
+      wxEpsPeak: number;
+      nfEpsPeak: number;
+      wxInsight: string; 
+      nfInsight: string;
+      wxDescription: string;
+      nfDescription: string;
+      status: 'normal' | 'warning' | 'critical';
+      statusText: string;
+      systemInsight: string;
+    } } = {
+      'unified-log': {
+        wxEps: 78, nfEps: 66, wxEpsPeak: 11, nfEpsPeak: 6,
+        wxInsight: '统一日志平台主集群运行正常，EPS峰值较上一交易日下跌5.51%，流量有所回落。',
+        nfInsight: '南方集群指标平稳，弹性良好，无明显瓶颈。',
+        wxDescription: '较上一交易日下跌 5.51%，流量有所回落。',
+        nfDescription: '集群指标平稳，弹性良好，无明显瓶颈。',
+        status: 'normal', statusText: '系统运行正常',
+        systemInsight: '无高风险告警，所有指标正常，但需关注磁盘使用率趋势以防潜在容量风险。'
+      },
+      'payment-center': {
+        wxEps: 85, nfEps: 72, wxEpsPeak: 8, nfEpsPeak: 4,
+        wxInsight: '支付中心主集群交易量稳定，响应时间在正常范围内，建议关注高峰期资源使用。',
+        nfInsight: '支付备集群运行正常，可作为主集群的容灾备份。',
+        wxDescription: '交易量稳定，响应时间正常，建议关注高峰期资源使用。',
+        nfDescription: '备集群运行正常，可作为主集群的容灾备份。',
+        status: 'normal', statusText: '系统运行正常',
+        systemInsight: '交易成功率保持在99.9%以上，但CPU使用率偏高，建议关注高峰期资源分配。'
+      },
+      'order-system': {
+        wxEps: 92, nfEps: 58, wxEpsPeak: 9.5, nfEpsPeak: 4.8,
+        wxInsight: '订单系统主集群负载较高，建议在促销活动前进行容量评估。',
+        nfInsight: '订单备集群资源利用率偏低，可考虑优化资源配置。',
+        wxDescription: '主集群负载较高，建议在促销活动前进行容量评估。',
+        nfDescription: '备集群资源利用率偏低，可考虑优化资源配置。',
+        status: 'warning', statusText: '系统运行预警',
+        systemInsight: '主集群负载较高，订单处理响应时间偏长，建议优化数据库查询并扩容资源。'
+      }
+    };
+    
+    businessSystems.forEach(system => {
+      const config = systemConfigs[system.code] || {
+        wxEps: Math.floor(Math.random() * 20) + 70,
+        nfEps: Math.floor(Math.random() * 15) + 55,
+        wxEpsPeak: Math.round((Math.random() * 5 + 8) * 10) / 10,
+        nfEpsPeak: Math.round((Math.random() * 3 + 4) * 10) / 10,
+        wxInsight: `${system.name}主集群运行正常，各项指标稳定。`,
+        nfInsight: `${system.name}备集群运行正常。`,
+        wxDescription: '集群运行正常，各项指标稳定。',
+        nfDescription: '备集群运行正常。',
+        status: 'normal' as const,
+        statusText: '系统运行正常',
+        systemInsight: '系统运行平稳，无异常告警。'
+      };
+      
+      reports.push({
+        id: `mock-${system.id}-${dateStr}`,
+        report_date: dateStr,
+        business_system_id: system.id,
+        system_status: config.status,
+        system_status_text: config.statusText,
+        system_insight: config.systemInsight,
+        wx_cluster_eps_rate: config.wxEps,
+        wx_cluster_eps_peak: config.wxEpsPeak,
+        wx_cluster_eps_peak_date: dateStr,
+        wx_cluster_insight: config.wxInsight,
+        wx_cluster_description: config.wxDescription,
+        nf_cluster_eps_rate: config.nfEps,
+        nf_cluster_eps_peak: config.nfEpsPeak,
+        nf_cluster_eps_peak_date: dateStr,
+        nf_cluster_insight: config.nfInsight,
+        nf_cluster_description: config.nfDescription,
+        created_at: `${dateStr}T08:00:00Z`,
+        updated_at: `${dateStr}T08:00:00Z`
+      });
+    });
+    
+    return reports;
+  };
+
+  const newReports = originalGenerateDailyReports();
+  
+  const originalGenerateLogMetrics = (): MockLogMetric[] => {
+    const metrics: MockLogMetric[] = [];
+    const dateStr = targetDate;
+    
+    const metricTemplates: { [systemCode: string]: { name: string; nameEn: string; layer: 'access' | 'buffer' | 'storage' | 'application'; unit: string; baseValue: number }[] } = {
+      'unified-log': [
+        { name: '请求量', nameEn: 'Request Count', layer: 'access', unit: '次', baseValue: 120000 },
+        { name: '响应时间', nameEn: 'Response Time', layer: 'application', unit: 'ms', baseValue: 50 },
+        { name: 'CPU使用率', nameEn: 'CPU Usage', layer: 'application', unit: '%', baseValue: 75 },
+        { name: '内存使用率', nameEn: 'Memory Usage', layer: 'application', unit: '%', baseValue: 80 },
+        { name: 'Collector EPS', nameEn: 'Collector EPS', layer: 'application', unit: 'w/s', baseValue: 11 },
+        { name: '平均搜索耗时', nameEn: 'Avg Search Time', layer: 'storage', unit: 'ms', baseValue: 120 },
+        { name: '日志入库耗时', nameEn: 'Log Ingest Time', layer: 'buffer', unit: 'ms', baseValue: 85 },
+        { name: '监控延迟', nameEn: 'Monitor Latency', layer: 'application', unit: 'ms', baseValue: 35 },
+      ],
+      'payment-center': [
+        { name: '交易量', nameEn: 'Transaction Count', layer: 'access', unit: '次', baseValue: 90000 },
+        { name: '响应时间', nameEn: 'Response Time', layer: 'application', unit: 'ms', baseValue: 180 },
+        { name: 'CPU使用率', nameEn: 'CPU Usage', layer: 'application', unit: '%', baseValue: 85 },
+        { name: '内存使用率', nameEn: 'Memory Usage', layer: 'application', unit: '%', baseValue: 72 },
+        { name: '交易TPS', nameEn: 'Transaction TPS', layer: 'application', unit: 'w/s', baseValue: 8 },
+        { name: '平均搜索耗时', nameEn: 'Avg Search Time', layer: 'storage', unit: 'ms', baseValue: 95 },
+        { name: '日志入库耗时', nameEn: 'Log Ingest Time', layer: 'buffer', unit: 'ms', baseValue: 68 },
+        { name: '监控延迟', nameEn: 'Monitor Latency', layer: 'application', unit: 'ms', baseValue: 42 },
+      ],
+      'order-system': [
+        { name: '订单量', nameEn: 'Order Count', layer: 'access', unit: '次', baseValue: 105000 },
+        { name: '响应时间', nameEn: 'Response Time', layer: 'application', unit: 'ms', baseValue: 220 },
+        { name: 'CPU使用率', nameEn: 'CPU Usage', layer: 'application', unit: '%', baseValue: 78 },
+        { name: '内存使用率', nameEn: 'Memory Usage', layer: 'application', unit: '%', baseValue: 85 },
+        { name: '订单TPS', nameEn: 'Order TPS', layer: 'application', unit: 'w/s', baseValue: 9.5 },
+        { name: '平均搜索耗时', nameEn: 'Avg Search Time', layer: 'storage', unit: 'ms', baseValue: 145 },
+        { name: '日志入库耗时', nameEn: 'Log Ingest Time', layer: 'buffer', unit: 'ms', baseValue: 92 },
+        { name: '监控延迟', nameEn: 'Monitor Latency', layer: 'application', unit: 'ms', baseValue: 28 },
+      ]
+    };
+    
+    clusters.forEach(cluster => {
+      const system = businessSystems.find(s => s.id === cluster.business_system_id);
+      if (!system) return;
+      
+      const templates = metricTemplates[system.code] || [];
+      const isMain = cluster.type === 'wx';
+      const multiplier = isMain ? 1 : 0.5;
+      
+      templates.forEach((template, index) => {
+        const baseValue = template.baseValue * multiplier;
+        const variance = template.baseValue * 0.1;
+        const isEpsMetric = ['Collector EPS', '交易TPS', '订单TPS'].includes(template.name);
+        const roundFn = isEpsMetric ? (n: number) => Math.round(n * 10) / 10 : Math.round;
+        
+        metrics.push({
+          id: `mock-metric-${cluster.id}-${index}`,
+          cluster_id: cluster.id,
+          report_date: dateStr,
+          metric_name: template.name,
+          metric_name_en: template.nameEn,
+          layer: template.layer,
+          today_max: roundFn(baseValue + variance * (Math.random() * 0.5 + 0.5)),
+          today_avg: roundFn(baseValue),
+          yesterday_max: roundFn(baseValue + variance * (Math.random() * 0.5 + 0.3)),
+          yesterday_avg: roundFn(baseValue - variance * 0.2),
+          historical_max: roundFn(baseValue + variance * 1.5),
+          historical_max_date: '2026-03-15',
+          sla_threshold: roundFn(baseValue * 0.8),
+          unit: template.unit,
+          change_rate: Math.round((Math.random() * 6 - 3) * 10) / 10,
+          health_status: 'healthy',
+          created_at: `${dateStr}T08:00:00Z`,
+          updated_at: `${dateStr}T08:00:00Z`
+        });
+      });
+    });
+    
+    return metrics;
+  };
+  
+  const newMetrics = originalGenerateLogMetrics();
+
+  const originalGenerateCloudRegions = (): MockCloudRegion[] => {
+    const regions: MockCloudRegion[] = [];
+    const dateStr = targetDate;
+    
+    const regionTemplatesBySystem: { [code: string]: { name: string; baseTraffic: number }[] } = {
+      'unified-log': [
+        { name: '华东-上海', baseTraffic: 12500 },
+        { name: '华北-北京', baseTraffic: 9800 },
+        { name: '华南-广州', baseTraffic: 8200 },
+        { name: '西南-成都', baseTraffic: 6500 },
+        { name: '华中-武汉', baseTraffic: 5200 },
+      ],
+      'payment-center': [
+        { name: '华东-上海', baseTraffic: 15800 },
+        { name: '华北-北京', baseTraffic: 11200 },
+        { name: '华南-广州', baseTraffic: 9500 },
+        { name: '西南-成都', baseTraffic: 7800 },
+        { name: '西北-西安', baseTraffic: 4500 },
+      ],
+      'order-system': [
+        { name: '华东-上海', baseTraffic: 18200 },
+        { name: '华北-北京', baseTraffic: 13500 },
+        { name: '华南-广州', baseTraffic: 10800 },
+        { name: '西南-成都', baseTraffic: 8200 },
+        { name: '东北-沈阳', baseTraffic: 3800 },
+      ]
+    };
+    
+    clusters.forEach(cluster => {
+      const system = businessSystems.find(s => s.id === cluster.business_system_id);
+      if (!system) return;
+      
+      const regionTemplates = regionTemplatesBySystem[system.code] || [
+        { name: '华东-上海', baseTraffic: 8500 },
+        { name: '华北-北京', baseTraffic: 7200 },
+        { name: '华南-广州', baseTraffic: 6800 },
+      ];
+      
+      const isMain = cluster.type === 'wx';
+      const multiplier = isMain ? 1.5 : 0.6;
+      
+      regionTemplates.forEach((template, index) => {
+        regions.push({
+          id: `mock-region-${cluster.id}-${index}`,
+          cluster_id: cluster.id,
+          report_date: dateStr,
+          name: template.name,
+          node_count: Math.floor((Math.random() * 10 + 10) * (isMain ? 1.2 : 0.7)),
+          current_traffic: Math.round(template.baseTraffic * multiplier),
+          peak_traffic: Math.round(template.baseTraffic * multiplier * 1.3),
+          region_type: cluster.type,
+          created_at: `${dateStr}T08:00:00Z`,
+          updated_at: `${dateStr}T08:00:00Z`
+        });
+      });
+    });
+    
+    return regions;
+  };
+
+  const newRegions = originalGenerateCloudRegions();
+
+  const newAssessments = generateAssessments(newReports);
+  const newPlans = generateActionPlans(newReports);
+
+  cachedReportDate = targetDate;
+  cachedDailyReports = newReports;
+  cachedLogMetrics = newMetrics;
+  cachedCloudRegions = newRegions;
+  cachedAssessments = newAssessments;
+  cachedActionPlans = newPlans;
+
+  return {
+    reports: newReports,
+    metrics: newMetrics,
+    regions: newRegions,
+    assessments: newAssessments,
+    actionPlans: newPlans
+  };
+};
+
 export const mockData = {
   businessSystems,
   clusters,
@@ -533,11 +805,50 @@ export const mockData = {
 
 export const getMockBusinessSystems = () => businessSystems;
 export const getMockClusters = () => clusters;
-export const getMockDailyReports = () => dailyReports;
-export const getMockLogMetrics = () => logMetrics;
-export const getMockCloudRegions = () => cloudRegions;
-export const getMockAssessments = () => assessments;
-export const getMockActionPlans = () => actionPlans;
+export const getMockDailyReports = (targetDate?: string) => {
+  if (!targetDate) {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    targetDate = d.toISOString().split('T')[0];
+  }
+  return getOrCreateDailyData(targetDate).reports;
+};
+
+export const getMockLogMetrics = (targetDate?: string) => {
+  if (!targetDate) {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    targetDate = d.toISOString().split('T')[0];
+  }
+  return getOrCreateDailyData(targetDate).metrics;
+};
+
+export const getMockCloudRegions = (targetDate?: string) => {
+  if (!targetDate) {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    targetDate = d.toISOString().split('T')[0];
+  }
+  return getOrCreateDailyData(targetDate).regions;
+};
+
+export const getMockAssessments = (targetDate?: string) => {
+  if (!targetDate) {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    targetDate = d.toISOString().split('T')[0];
+  }
+  return getOrCreateDailyData(targetDate).assessments;
+};
+
+export const getMockActionPlans = (targetDate?: string) => {
+  if (!targetDate) {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    targetDate = d.toISOString().split('T')[0];
+  }
+  return getOrCreateDailyData(targetDate).actionPlans;
+};
 
 export const getMockBusinessSystemById = (id: string) => 
   businessSystems.find(s => s.id === id);
@@ -545,52 +856,62 @@ export const getMockBusinessSystemById = (id: string) =>
 export const getMockClustersByBusinessSystem = (businessSystemId: string) =>
   clusters.filter(c => c.business_system_id === businessSystemId);
 
-export const getMockDailyReportByDateAndSystem = (date: string, businessSystemId: string) =>
-  dailyReports.find(r => r.report_date === date && r.business_system_id === businessSystemId);
+export const getMockDailyReportByDateAndSystem = (date: string, businessSystemId: string) => {
+  const reports = getMockDailyReports(date);
+  return reports.find(r => r.report_date === date && r.business_system_id === businessSystemId);
+};
 
 export const getMockLogMetricsByReport = (dailyReportId: string) => {
-  const report = dailyReports.find(r => r.id === dailyReportId);
-  if (!report) {
-    const match = dailyReportId.match(/^mock-([a-f0-9-]+)-(\d{4}-\d{2}-\d{2})$/);
-    if (match) {
-      const [, bsId, dateStr] = match;
-      const systemClusters = clusters.filter(c => c.business_system_id === bsId);
-      const clusterIds = systemClusters.map(c => c.id);
-      return logMetrics.filter(m => m.report_date === dateStr && clusterIds.includes(m.cluster_id));
-    }
-    return [];
+  const match = dailyReportId.match(/^mock-([a-f0-9-]+)-(\d{4}-\d{2}-\d{2})$/);
+  if (match) {
+    const [, , dateStr] = match;
+    const allMetrics = getMockLogMetrics(dateStr);
+    const bsId = match[1];
+    const systemClusters = clusters.filter(c => c.business_system_id === bsId);
+    const clusterIds = systemClusters.map(c => c.id);
+    return allMetrics.filter(m => clusterIds.includes(m.cluster_id));
   }
+  
+  const reports = getMockDailyReports();
+  const report = reports.find(r => r.id === dailyReportId);
+  if (!report) return [];
   const systemClusters = clusters.filter(c => c.business_system_id === report.business_system_id);
   const clusterIds = systemClusters.map(c => c.id);
-  return logMetrics.filter(m => m.report_date === report.report_date && clusterIds.includes(m.cluster_id));
+  const allMetrics = getMockLogMetrics(report.report_date);
+  return allMetrics.filter(m => m.report_date === report.report_date && clusterIds.includes(m.cluster_id));
 };
 
 export const getMockCloudRegionsByReport = (dailyReportId: string) => {
-  const report = dailyReports.find(r => r.id === dailyReportId);
-  if (!report) {
-    const match = dailyReportId.match(/^mock-([a-f0-9-]+)-(\d{4}-\d{2}-\d{2})$/);
-    if (match) {
-      const [, bsId, dateStr] = match;
-      const systemClusters = clusters.filter(c => c.business_system_id === bsId);
-      const clusterIds = systemClusters.map(c => c.id);
-      return cloudRegions.filter(r => r.report_date === dateStr && clusterIds.includes(r.cluster_id));
-    }
-    return [];
+  const match = dailyReportId.match(/^mock-([a-f0-9-]+)-(\d{4}-\d{2}-\d{2})$/);
+  if (match) {
+    const [, , dateStr] = match;
+    const allRegions = getMockCloudRegions(dateStr);
+    const bsId = match[1];
+    const systemClusters = clusters.filter(c => c.business_system_id === bsId);
+    const clusterIds = systemClusters.map(c => c.id);
+    return allRegions.filter(r => clusterIds.includes(r.cluster_id));
   }
+  
+  const reports = getMockDailyReports();
+  const report = reports.find(r => r.id === dailyReportId);
+  if (!report) return [];
   const systemClusters = clusters.filter(c => c.business_system_id === report.business_system_id);
   const clusterIds = systemClusters.map(c => c.id);
-  return cloudRegions.filter(r => r.report_date === report.report_date && clusterIds.includes(r.cluster_id));
+  const allRegions = getMockCloudRegions(report.report_date);
+  return allRegions.filter(r => r.report_date === report.report_date && clusterIds.includes(r.cluster_id));
 };
 
 export const getMockAssessmentsByReport = (dailyReportId: string) => {
-  const report = dailyReports.find(r => r.id === dailyReportId);
+  const reports = getMockDailyReports();
+  const report = reports.find(r => r.id === dailyReportId);
   if (report) {
-    return assessments.filter(a => a.report_id === dailyReportId);
+    const allAssessments = getMockAssessments(report.report_date);
+    return allAssessments.filter(a => a.report_id === dailyReportId);
   }
   
   const match = dailyReportId.match(/^mock-([a-f0-9-]+)-(\d{4}-\d{2}-\d{2})$/);
   if (match) {
-    const [, bsId] = match;
+    const [, bsId, dateStr] = match;
     const system = businessSystems.find(s => s.id === bsId);
     if (!system) return [];
     
@@ -628,7 +949,7 @@ export const getMockAssessmentsByReport = (dailyReportId: string) => {
       category: cat.category,
       content: cat.content,
       status: cat.status,
-      created_at: `${match[2]}T08:00:00Z`
+      created_at: `${dateStr}T08:00:00Z`
     }));
   }
   
@@ -636,14 +957,16 @@ export const getMockAssessmentsByReport = (dailyReportId: string) => {
 };
 
 export const getMockActionPlansByReport = (dailyReportId: string) => {
-  const report = dailyReports.find(r => r.id === dailyReportId);
+  const reports = getMockDailyReports();
+  const report = reports.find(r => r.id === dailyReportId);
   if (report) {
-    return actionPlans.filter(p => p.report_id === dailyReportId);
+    const allPlans = getMockActionPlans(report.report_date);
+    return allPlans.filter(p => p.report_id === dailyReportId);
   }
   
   const match = dailyReportId.match(/^mock-([a-f0-9-]+)-(\d{4}-\d{2}-\d{2})$/);
   if (match) {
-    const [, bsId] = match;
+    const [, bsId, dateStr] = match;
     const system = businessSystems.find(s => s.id === bsId);
     if (!system) return [];
     
@@ -677,7 +1000,7 @@ export const getMockActionPlansByReport = (dailyReportId: string) => {
       priority: template.priority,
       items: template.items,
       insight: template.insight,
-      created_at: `${match[2]}T08:00:00Z`
+      created_at: `${dateStr}T08:00:00Z`
     }));
   }
   
@@ -685,7 +1008,12 @@ export const getMockActionPlansByReport = (dailyReportId: string) => {
 };
 
 export const getMockAvailableDates = (businessSystemId: string) => {
-  const dates = dailyReports
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const yesterday = d.toISOString().split('T')[0];
+  
+  const reports = getMockDailyReports(yesterday);
+  const dates = reports
     .filter(r => r.business_system_id === businessSystemId)
     .map(r => r.report_date)
     .sort((a, b) => b.localeCompare(a));

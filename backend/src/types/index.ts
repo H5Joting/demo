@@ -96,3 +96,103 @@ export interface PaginatedResponse<T> {
   page: number;
   pageSize: number;
 }
+
+export interface ExportMetadata {
+  exported_at: string;
+  exporter_version: string;
+  schema_version: number;
+}
+
+export interface ExportClusterConfig {
+  name: string;
+  name_en: string;
+  type: 'wx' | 'nf';
+  description?: string;
+}
+
+export interface ExportMetricConfig {
+  metric_name: string;
+  metric_name_en: string;
+  layer: 'access' | 'buffer' | 'storage' | 'application';
+  unit: string;
+  sla_threshold: number;
+}
+
+export interface ExportPanelConfig {
+  type: 'metrics_table' | 'region_traffic' | 'assessment' | 'action_plan';
+  title: string;
+  description?: string;
+  visible: boolean;
+  order: number;
+}
+
+export interface ExportDatasourceRef {
+  type: 'supabase' | 'mock';
+  uid: string;
+  description: string;
+}
+
+export interface ExportQueryConfig {
+  table: string;
+  filters?: Record<string, string[]>;
+  sort?: {
+    field: string;
+    order: 'asc' | 'desc';
+  };
+  limit?: number;
+}
+
+export interface ExportPanelDatasource {
+  panel_type: string;
+  title: string;
+  datasource: ExportDatasourceRef;
+  query: ExportQueryConfig;
+  visible: boolean;
+  order: number;
+}
+
+export interface ExportJSON {
+  __meta: ExportMetadata;
+  uid?: string;
+  overwrite?: boolean;
+  datasource: ExportDatasourceRef;
+  report: {
+    title: string;
+    description: string;
+    code: string;
+    status: 'active' | 'inactive';
+    tags: string[];
+    refresh_interval?: string;
+    time_range?: {
+      from: string;
+      to: string;
+    };
+  };
+  clusters: {
+    wx_cluster: ExportClusterConfig | null;
+    nf_cluster: ExportClusterConfig | null;
+  };
+  panels: ExportPanelConfig[];
+  templating: {
+    variables: {
+      name: string;
+      type: 'custom' | 'query';
+      default: string;
+      options: string[];
+    }[];
+  };
+  data_queries: ExportPanelDatasource[];
+}
+
+export interface ImportResult {
+  message: string;
+  mode: 'created' | 'updated';
+  imported: {
+    business_system: number;
+    clusters: number;
+  };
+  details: {
+    business_system: BusinessSystem;
+    clusters: Cluster[];
+  };
+}
