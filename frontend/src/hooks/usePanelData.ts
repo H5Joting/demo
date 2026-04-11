@@ -9,6 +9,10 @@ export interface PanelDatasource {
   method?: 'GET' | 'POST';
   params?: Record<string, any>;
   refreshInterval?: number;
+  endpoints?: {
+    assessment?: PanelDatasource;
+    actionPlan?: PanelDatasource;
+  };
 }
 
 /**
@@ -43,7 +47,7 @@ export function usePanelData<T>(
   
   const paramsKey = useMemo(() => JSON.stringify(params || {}), [params]);
   const datasourceKey = useMemo(() => 
-    datasource ? `${datasource.endpoint}-${datasource.method}` : '', 
+    datasource ? `${datasource.endpoint}-${datasource.method}-${JSON.stringify(datasource.params || {})}` : '', 
     [datasource]
   );
 
@@ -59,12 +63,14 @@ export function usePanelData<T>(
     try {
       const url = new URL(datasource.endpoint, window.location.origin);
       
-      const queryParams = { ...datasource.params, ...params };
+      const queryParams = { ...params, ...datasource.params };
       Object.entries(queryParams).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           url.searchParams.append(key, String(value));
         }
       });
+
+      console.log('[usePanelData] Fetching:', url.toString());
 
       const response = await fetch(url.toString(), {
         method: datasource.method || 'GET',
@@ -100,12 +106,7 @@ export function usePanelData<T>(
       hasFetchedRef.current = true;
       fetchData();
     }
-
-    if (datasource?.refreshInterval && datasource.refreshInterval > 0) {
-      const interval = setInterval(fetchData, datasource.refreshInterval);
-      return () => clearInterval(interval);
-    }
-  }, [fetchData, datasource?.refreshInterval]);
+  }, [fetchData]);
 
   return {
     data,

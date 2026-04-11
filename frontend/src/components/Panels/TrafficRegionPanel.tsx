@@ -16,10 +16,10 @@ interface RegionTrafficData {
 }
 
 const TrafficRegionPanel: React.FC<Props> = ({ date, systemId, datasource }) => {
-  const effectiveDatasource: PanelDatasource | null = datasource?.endpoint
+  const effectiveDatasource: PanelDatasource | null = datasource
     ? {
         type: datasource.type || 'api',
-        endpoint: datasource.endpoint,
+        endpoint: datasource.endpoint || '/api/panel/region-traffic',
         method: datasource.method || 'GET',
         params: datasource.params,
       }

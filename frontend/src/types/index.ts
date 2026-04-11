@@ -189,6 +189,7 @@ export interface ExportPanelDatasource {
 
 export interface GrafanaPanelDatasource {
   type: 'api' | 'database';
+  uid?: string;
   endpoint?: string;
   method?: 'GET' | 'POST';
   params?: Record<string, any>;
@@ -330,7 +331,7 @@ export interface GrafanaDashboard {
     list: GrafanaAnnotation[];
   };
   links?: GrafanaLink[];
-  panels: GrafanaPanel[];
+  panels?: GrafanaPanel[];
   clusters?: {
     wx_cluster: ExportClusterConfig | null;
     nf_cluster: ExportClusterConfig | null;

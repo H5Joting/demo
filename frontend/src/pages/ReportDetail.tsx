@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { message } from 'antd';
+import { AimOutlined } from '@ant-design/icons';
 import {
   DndContext,
   closestCenter,
@@ -23,6 +24,7 @@ import ErrorState from '@/components/ErrorState';
 import PageHeader from '@/components/PageHeader';
 import ExportModal from '@/components/ExportModal';
 import { DraggableSection } from '@/components/Panel';
+import AIChatPanel, { ChatMessage } from '@/components/AIChatPanel';
 import {
   SummaryStatusPanel,
   SlaMetricsPanel,
@@ -106,7 +108,8 @@ const resolveDatasource = (
 const renderPanel = (
   panel: GrafanaPanel,
   date: string,
-  systemId: string
+  systemId: string,
+  onStatusChange?: (status: 'normal' | 'warning' | 'critical' | null) => void
 ): React.ReactNode => {
   const datasource = resolveDatasource(panel.datasource, date, systemId);
   const reportId = `${systemId}-${date}`;
@@ -118,6 +121,7 @@ const renderPanel = (
           date={date}
           systemId={systemId}
           datasource={datasource}
+          onStatusChange={onStatusChange}
         />
       );
     
@@ -177,7 +181,7 @@ const getPanelTitles = (panel: GrafanaPanel, index: number): { title: string; su
   }
   
   const defaultSubtitles = [
-    'Executive Summary & Risks',
+    'Overview',
     'SLA Core Metrics',
     'Cluster Core Metrics Detail',
     'Cloud Region Traffic Situational Awareness',
@@ -210,7 +214,7 @@ const ReportDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isDbError, setIsDbError] = useState(false);
   const [exportVisible, setExportVisible] = useState(false);
-  const [exportData, setExportData] = useState<ExportJSON | null>(null);
+  const [exportData, setExportData] = useState<(ExportJSON & { panelTemplate?: any }) | null>(null);
   const [reportStatus, setReportStatus] = useState<'normal' | 'warning' | 'critical' | null>(null);
   const [isConfigMode, setIsConfigMode] = useState(false);
   const [panelOrder, setPanelOrder] = useState<string[]>([]);
@@ -218,6 +222,25 @@ const ReportDetail: React.FC = () => {
   const [operationHistory, setOperationHistory] = useState<Array<{ panelOrder: string[]; deletedPanels: string[] }>>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const isLoadingRef = React.useRef(false);
+  const [selectedPanelId, setSelectedPanelId] = useState<string | null>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    {
+      id: 'welcome',
+      role: 'assistant',
+      content: `您好！我是 GLM-5 报表助手。
+
+您可以在左侧预览中 **点击选中** 任意可编辑面板，然后告诉我您想要的修改，预览会**实时更新**。
+
+支持的操作：
+• 修改面板标题
+• 调整面板顺序
+• 删除不需要的面板
+
+⚠️「核心结论与风险」和「评估与计划」为固定模块，不可修改。`,
+      timestamp: new Date(),
+    },
+  ]);
+  const [isAiTyping, setIsAiTyping] = useState(false);
 
   const effectiveSystemId = system?.datasource_reference?.original_uid || systemId || '';
 
@@ -253,34 +276,13 @@ const ReportDetail: React.FC = () => {
     }
   }, [systemId]);
 
-  const loadReportStatus = React.useCallback(async () => {
-    const currentSystemId = system?.datasource_reference?.original_uid || systemId;
-    if (!currentSystemId || !selectedDate) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/panel/summary?date=${selectedDate}&systemId=${currentSystemId}`);
-      const result = await response.json();
-      
-      if (result.success && result.data?.report) {
-        setReportStatus(result.data.report.system_status);
-      } else {
-        setReportStatus(null);
-      }
-    } catch (err) {
-      console.error('Failed to load report status:', err);
-      setReportStatus(null);
-    }
-  }, [systemId, selectedDate, system]);
-
   React.useEffect(() => {
     loadSystem();
   }, [loadSystem]);
 
-  React.useEffect(() => {
-    loadReportStatus();
-  }, [loadReportStatus]);
+  const handleStatusChange = useCallback((status: 'normal' | 'warning' | 'critical' | null) => {
+    setReportStatus(status);
+  }, []);
 
   React.useEffect(() => {
     const handleFullscreenChange = () => {
@@ -293,7 +295,13 @@ const ReportDetail: React.FC = () => {
     };
   }, []);
 
-  const DEFAULT_PANEL_IDS = ['summary', 'sla', 'cluster', 'traffic', 'assessment'];
+  const DEFAULT_PANEL_IDS = [
+    'panel-summary-status',
+    'panel-sla-metrics',
+    'panel-cluster-metrics',
+    'panel-region-traffic',
+    'panel-assessment-action'
+  ];
 
   const panels = useMemo(() => {
     const originalPanels = system?.datasource_reference?.panels || null;
@@ -309,17 +317,169 @@ const ReportDetail: React.FC = () => {
     return panelOrder.map(id => originalPanels.find(p => p.id === id)).filter(Boolean) as GrafanaPanel[];
   }, [system, panelOrder]);
 
+  const getPanelTitle = useCallback((panelId: string): string => {
+    if (!panels) {
+      const defaultTitles: Record<string, string> = {
+        'panel-summary-status': '核心结论与风险',
+        'panel-sla-metrics': 'SLA 核心指标',
+        'panel-cluster-metrics': '集群核心指标明细',
+        'panel-region-traffic': '云区域流量态势',
+        'panel-assessment-action': '评估与计划',
+      };
+      return defaultTitles[panelId] || panelId;
+    }
+    const panel = panels.find(p => p.id === panelId);
+    return panel?.title || panelId;
+  }, [panels]);
+
+  const getPanelType = useCallback((panelId: string): string => {
+    if (!panels) return 'default';
+    const panel = panels.find(p => p.id === panelId);
+    return panel?.type || 'default';
+  }, [panels]);
+
+  const handleDeletePanel = useCallback((panelId: string) => {
+    console.log('[handleDeletePanel] 删除面板:', panelId);
+    console.log('[handleDeletePanel] 当前 panelOrder:', panelOrder);
+    console.log('[handleDeletePanel] 当前 deletedPanels:', Array.from(deletedPanels));
+    
+    setOperationHistory(prev => [...prev, { 
+      panelOrder: panelOrder, 
+      deletedPanels: Array.from(deletedPanels) 
+    }]);
+    
+    const newDeletedPanels = new Set(deletedPanels);
+    newDeletedPanels.add(panelId);
+    const newPanelOrder = panelOrder.filter(id => id !== panelId);
+    
+    setDeletedPanels(newDeletedPanels);
+    setPanelOrder(newPanelOrder);
+    
+    const template = {
+      panelOrder: newPanelOrder,
+      deletedPanels: Array.from(newDeletedPanels),
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(`report-template-${systemId}`, JSON.stringify(template));
+    
+    message.success('面板已删除');
+  }, [panelOrder, deletedPanels, systemId]);
+
+  const handleSendMessage = useCallback(async (content: string) => {
+    const userMessage: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      role: 'user',
+      content,
+      selectedElement: selectedPanelId ? {
+        id: selectedPanelId,
+        title: getPanelTitle(selectedPanelId),
+      } : undefined,
+      timestamp: new Date(),
+    };
+
+    setChatMessages(prev => [...prev, userMessage]);
+    setIsAiTyping(true);
+
+    try {
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: content,
+          selectedPanel: selectedPanelId ? {
+            id: selectedPanelId,
+            title: getPanelTitle(selectedPanelId),
+            type: getPanelType(selectedPanelId),
+          } : undefined,
+          conversationHistory: chatMessages
+            .filter(m => m.id !== 'welcome')
+            .map(m => ({
+              role: m.role,
+              content: m.content,
+            })),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        const aiMessage: ChatMessage = {
+          id: `msg-${Date.now() + 1}`,
+          role: 'assistant',
+          content: result.data.message,
+          timestamp: new Date(),
+          changes: result.data.modifications?.map((m: any) => ({
+            field: m.field,
+            description: m.description,
+          })),
+        };
+
+        setChatMessages(prev => [...prev, aiMessage]);
+
+        if (result.data.modifications) {
+          result.data.modifications.forEach((mod: any) => {
+            if (mod.field === 'remove') {
+              handleDeletePanel(mod.panelId);
+              setSelectedPanelId(null);
+            } else if (mod.field === 'add') {
+              message.success(`已添加新面板：${mod.newValue.type}`);
+            }
+          });
+        }
+      } else {
+        const errorMessage: ChatMessage = {
+          id: `msg-${Date.now() + 1}`,
+          role: 'assistant',
+          content: result.error || '抱歉，处理您的请求时出现错误，请稍后重试。',
+          timestamp: new Date(),
+        };
+        setChatMessages(prev => [...prev, errorMessage]);
+      }
+    } catch (error) {
+      console.error('AI chat error:', error);
+      const errorMessage: ChatMessage = {
+        id: `msg-${Date.now() + 1}`,
+        role: 'assistant',
+        content: '抱歉，AI 服务暂时不可用，请稍后重试。',
+        timestamp: new Date(),
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsAiTyping(false);
+    }
+  }, [selectedPanelId, chatMessages, getPanelTitle, getPanelType, handleDeletePanel]);
+
+  const handlePanelSelect = useCallback((panelId: string, isFixed: boolean) => {
+    if (isFixed) {
+      message.info('固定模块不可选择修改');
+      return;
+    }
+    setSelectedPanelId(panelId === selectedPanelId ? null : panelId);
+  }, [selectedPanelId]);
+
   React.useEffect(() => {
+    const oldToNewIdMap: Record<string, string> = {
+      'summary': 'panel-summary-status',
+      'sla': 'panel-sla-metrics',
+      'cluster': 'panel-cluster-metrics',
+      'traffic': 'panel-region-traffic',
+      'assessment': 'panel-assessment-action',
+    };
+    
     const savedTemplate = localStorage.getItem(`report-template-${systemId}`);
     
     if (savedTemplate) {
       try {
         const template = JSON.parse(savedTemplate);
         if (template.panelOrder) {
-          setPanelOrder(template.panelOrder);
+          const convertedPanelOrder = template.panelOrder.map((id: string) => oldToNewIdMap[id] || id);
+          console.log('[loadTemplate] Converted panelOrder:', template.panelOrder, '->', convertedPanelOrder);
+          setPanelOrder(convertedPanelOrder);
         }
         if (template.deletedPanels) {
-          setDeletedPanels(new Set(template.deletedPanels));
+          const convertedDeletedPanels = template.deletedPanels.map((id: string) => oldToNewIdMap[id] || id);
+          console.log('[loadTemplate] Converted deletedPanels:', template.deletedPanels, '->', convertedDeletedPanels);
+          setDeletedPanels(new Set(convertedDeletedPanels));
         }
         return;
       } catch (e) {
@@ -369,6 +529,13 @@ const ReportDetail: React.FC = () => {
           deletedPanels: Array.from(deletedPanels) 
         }]);
         setPanelOrder(newOrder);
+        
+        const template = {
+          panelOrder: newOrder,
+          deletedPanels: Array.from(deletedPanels),
+          savedAt: new Date().toISOString(),
+        };
+        localStorage.setItem(`report-template-${systemId}`, JSON.stringify(template));
       }
     }
   };
@@ -403,25 +570,70 @@ const ReportDetail: React.FC = () => {
     window.location.reload();
   };
 
-  const handleExport = async () => {
+ const handleExport = async () => {
     if (!systemId) {
       message.error('系统ID不存在');
       return;
     }
 
     try {
-      const data = await exportReport(systemId);
+      const dashboardData = await exportReport(systemId);
+      
+      console.log('=== 导出调试信息 ===');
+      console.log('当前 panelOrder 状态:', panelOrder);
+      console.log('当前 deletedPanels 状态:', Array.from(deletedPanels));
+      console.log('API 返回的 panels:', dashboardData.panels?.map((p: any) => ({ id: p.id, title: p.title })));
+      
+      let reorderedPanels = dashboardData.panels || [];
+      
+      if (panelOrder.length > 0 && dashboardData.panels) {
+        const panelMap = new Map(dashboardData.panels.map((p: any) => [p.id, p]));
+        
+        console.log('panelMap keys:', Array.from(panelMap.keys()));
+        
+        reorderedPanels = panelOrder
+          .filter(id => {
+            const isDeleted = deletedPanels.has(id);
+            console.log(`过滤 panel ${id}: isDeleted=${isDeleted}`);
+            return !isDeleted;
+          })
+          .map(id => {
+            const panel = panelMap.get(id);
+            console.log(`映射 panel ${id}: found=${!!panel}`);
+            return panel;
+          })
+          .filter(Boolean);
+          
+        console.log('最终 reorderedPanels:', reorderedPanels.map((p: any) => ({ id: p.id, title: p.title })));
+      } else if (deletedPanels.size > 0 && dashboardData.panels) {
+        reorderedPanels = dashboardData.panels.filter((p: any) => !deletedPanels.has(p.id));
+        console.log('使用 deletedPanels 过滤后:', reorderedPanels.map((p: any) => ({ id: p.id, title: p.title })));
+      } else {
+        console.log('使用 API 返回的原始 panels');
+      }
       
       const template = {
         panelOrder,
         deletedPanels: Array.from(deletedPanels),
         savedAt: new Date().toISOString(),
+        systemId,
       };
       
       const exportDataWithTemplate = {
-        ...data,
-        panelTemplate: template,
+        __meta: {
+          exported_at: new Date().toISOString(),
+          exporter_version: '1.0.0',
+          schema_version: 1,
+          type: 'dashboard' as const,
+        },
+        dashboard: {
+          ...dashboardData,
+          panels: reorderedPanels,
+        },
+        panelTemplate: template
       };
+      
+      console.log('Final export data panels:', exportDataWithTemplate.dashboard.panels);
       
       setExportData(exportDataWithTemplate);
       setExportVisible(true);
@@ -442,21 +654,6 @@ const ReportDetail: React.FC = () => {
     } else {
       message.success('配置模式已关闭');
     }
-  };
-
-  const handleDeletePanel = (panelId: string) => {
-    setOperationHistory(prev => [...prev, { 
-      panelOrder: panelOrder, 
-      deletedPanels: Array.from(deletedPanels) 
-    }]);
-    
-    setDeletedPanels(prev => {
-      const newSet = new Set(prev);
-      newSet.add(panelId);
-      return newSet;
-    });
-    setPanelOrder(prev => prev.filter(id => id !== panelId));
-    message.success('面板已删除');
   };
 
   const handleSave = () => {
@@ -491,6 +688,14 @@ const ReportDetail: React.FC = () => {
     setPanelOrder(lastOperation.panelOrder);
     setDeletedPanels(new Set(lastOperation.deletedPanels));
     setOperationHistory(prev => prev.slice(0, -1));
+    
+    const template = {
+      panelOrder: lastOperation.panelOrder,
+      deletedPanels: lastOperation.deletedPanels,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(`report-template-${systemId}`, JSON.stringify(template));
+    
     message.success('已撤销上一步操作');
   };
 
@@ -499,18 +704,35 @@ const ReportDetail: React.FC = () => {
   };
 
   const renderDynamicPanels = () => {
+    console.log('[renderDynamicPanels] panels:', panels);
+    console.log('[renderDynamicPanels] panelOrder:', panelOrder);
+    console.log('[renderDynamicPanels] deletedPanels:', Array.from(deletedPanels));
+    
     if (!panels || panels.length === 0) {
       const defaultPanelsMap = {
-        'summary': { title: '核心结论与风险', subtitle: 'Executive Summary & Risks', component: <SummaryStatusPanel date={selectedDate} systemId={effectiveSystemId} /> },
-        'sla': { title: 'SLA 核心指标', subtitle: 'SLA Core Metrics', component: <SlaMetricsPanel date={selectedDate} systemId={effectiveSystemId} /> },
-        'cluster': { title: '集群核心指标明细', subtitle: 'Cluster Core Metrics Detail', component: <ClusterMetricsPanel date={selectedDate} systemId={effectiveSystemId} /> },
-        'traffic': { title: '云区域流量态势', subtitle: 'Cloud Region Traffic Situational Awareness', component: <TrafficRegionPanel date={selectedDate} systemId={effectiveSystemId} /> },
-        'assessment': { title: '评估与计划', subtitle: 'Assessment & Planning', component: <AssessmentActionPanel reportId={`${effectiveSystemId}-${selectedDate}`} /> },
+        'panel-summary-status': { title: '核心结论与风险', subtitle: 'Overview', component: <SummaryStatusPanel date={selectedDate} systemId={effectiveSystemId} onStatusChange={handleStatusChange} /> },
+        'panel-sla-metrics': { title: 'SLA 核心指标', subtitle: 'SLA Core Metrics', component: <SlaMetricsPanel date={selectedDate} systemId={effectiveSystemId} /> },
+        'panel-cluster-metrics': { title: '集群核心指标明细', subtitle: 'Cluster Core Metrics Detail', component: <ClusterMetricsPanel date={selectedDate} systemId={effectiveSystemId} /> },
+        'panel-region-traffic': { title: '云区域流量态势', subtitle: 'Cloud Region Traffic Situational Awareness', component: <TrafficRegionPanel date={selectedDate} systemId={effectiveSystemId} /> },
+        'panel-assessment-action': { title: '评估与计划', subtitle: 'Assessment & Planning', component: <AssessmentActionPanel reportId={`${effectiveSystemId}-${selectedDate}`} /> },
+      };
+
+      const oldToNewIdMap: Record<string, string> = {
+        'summary': 'panel-summary-status',
+        'sla': 'panel-sla-metrics',
+        'cluster': 'panel-cluster-metrics',
+        'traffic': 'panel-region-traffic',
+        'assessment': 'panel-assessment-action',
       };
 
       const orderedPanels = panelOrder.length > 0 
-        ? panelOrder.map(id => ({ id, ...defaultPanelsMap[id as keyof typeof defaultPanelsMap] })).filter(p => p.title && !deletedPanels.has(p.id))
+        ? panelOrder.map(id => {
+            const newId = oldToNewIdMap[id] || id;
+            return { id: newId, ...defaultPanelsMap[newId as keyof typeof defaultPanelsMap] };
+          }).filter(p => p.title && !deletedPanels.has(p.id))
         : DEFAULT_PANEL_IDS.map(id => ({ id, ...defaultPanelsMap[id as keyof typeof defaultPanelsMap] })).filter(p => !deletedPanels.has(p.id));
+
+      console.log('[renderDynamicPanels] Final orderedPanels:', orderedPanels);
 
       const chineseNumerals = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
 
@@ -537,6 +759,8 @@ const ReportDetail: React.FC = () => {
                     subtitle={panel.subtitle}
                     isConfigMode={isConfigMode}
                     isFixed={isFixed}
+                    isSelected={selectedPanelId === panel.id}
+                    onSelect={handlePanelSelect}
                     onDelete={handleDeletePanel}
                   >
                     {panel.component}
@@ -562,6 +786,8 @@ const ReportDetail: React.FC = () => {
                 subtitle={panel.subtitle}
                 isConfigMode={isConfigMode}
                 isFixed={isFixed}
+                isSelected={selectedPanelId === panel.id}
+                onSelect={handlePanelSelect}
                 onDelete={handleDeletePanel}
               >
                 {panel.component}
@@ -572,7 +798,14 @@ const ReportDetail: React.FC = () => {
       );
     }
 
-    const filteredPanels = panels.filter(panel => !deletedPanels.has(panel.id));
+    const filteredPanels = panelOrder.length > 0 
+      ? panelOrder
+          .filter(id => !deletedPanels.has(id))
+          .map(id => panels.find(p => p.id === id))
+          .filter(Boolean)
+      : panels.filter(panel => !deletedPanels.has(panel.id));
+
+    console.log('[renderDynamicPanels] filteredPanels (panels存在):', filteredPanels.map((p: any) => ({ id: p.id, title: p.title })));
 
     if (isConfigMode) {
       return (
@@ -587,7 +820,7 @@ const ReportDetail: React.FC = () => {
           >
             {filteredPanels.map((panel, index) => {
               const { title, subtitle } = getPanelTitles(panel, index);
-              const panelContent = renderPanel(panel, selectedDate, effectiveSystemId);
+              const panelContent = renderPanel(panel, selectedDate, effectiveSystemId, handleStatusChange);
               const isFixed = index === 0 || index === filteredPanels.length - 1;
               
               if (!panelContent) return null;
@@ -600,6 +833,8 @@ const ReportDetail: React.FC = () => {
                   subtitle={subtitle}
                   isConfigMode={isConfigMode}
                   isFixed={isFixed}
+                  isSelected={selectedPanelId === panel.id}
+                  onSelect={handlePanelSelect}
                   onDelete={handleDeletePanel}
                 >
                   {panelContent}
@@ -613,7 +848,7 @@ const ReportDetail: React.FC = () => {
 
     return filteredPanels.map((panel, index) => {
       const { title, subtitle } = getPanelTitles(panel, index);
-      const panelContent = renderPanel(panel, selectedDate, effectiveSystemId);
+      const panelContent = renderPanel(panel, selectedDate, effectiveSystemId, handleStatusChange);
       const isFixed = index === 0 || index === filteredPanels.length - 1;
       
       if (!panelContent) return null;
@@ -626,6 +861,8 @@ const ReportDetail: React.FC = () => {
           subtitle={subtitle}
           isConfigMode={isConfigMode}
           isFixed={isFixed}
+          isSelected={selectedPanelId === panel.id}
+          onSelect={handlePanelSelect}
           onDelete={handleDeletePanel}
         >
           {panelContent}
@@ -665,8 +902,30 @@ const ReportDetail: React.FC = () => {
         isFullscreen={isFullscreen}
       />
 
-      <div className={styles.content}>
-        {renderDynamicPanels()}
+      <div className={`${styles.content} ${isConfigMode ? styles.configModeContent : ''}`}>
+        <div className={styles.previewArea}>
+          {isConfigMode && (
+            <div className={styles.configHint}>
+              <AimOutlined /> 点击选中可编辑面板 · 拖拽调整顺序 · 右侧对话实时修改
+            </div>
+          )}
+          {renderDynamicPanels()}
+        </div>
+        
+        {isConfigMode && (
+          <div className={styles.chatPanel}>
+            <AIChatPanel
+              messages={chatMessages}
+              selectedElement={selectedPanelId ? {
+                id: selectedPanelId,
+                title: getPanelTitle(selectedPanelId),
+              } : null}
+              isTyping={isAiTyping}
+              onSendMessage={handleSendMessage}
+              onClearSelection={() => setSelectedPanelId(null)}
+            />
+          </div>
+        )}
       </div>
 
       <ExportModal

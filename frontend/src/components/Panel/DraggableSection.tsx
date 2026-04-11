@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { DragOutlined, LockOutlined, DeleteOutlined } from '@ant-design/icons';
+import { DragOutlined, LockOutlined, DeleteOutlined, CheckOutlined } from '@ant-design/icons';
 import styles from './DraggableSection.module.scss';
 
 interface DraggableSectionProps {
@@ -12,15 +12,11 @@ interface DraggableSectionProps {
   className?: string;
   isConfigMode?: boolean;
   isFixed?: boolean;
+  isSelected?: boolean;
+  onSelect?: (id: string, isFixed: boolean) => void;
   onDelete?: (id: string) => void;
 }
 
-/**
- * 可拖拽的 Section 组件
- * 
- * 在配置模式下支持拖拽排序功能
- * 固定面板不可拖拽和删除
- */
 const DraggableSection: React.FC<DraggableSectionProps> = ({
   id,
   title,
@@ -29,6 +25,8 @@ const DraggableSection: React.FC<DraggableSectionProps> = ({
   className,
   isConfigMode = false,
   isFixed = false,
+  isSelected = false,
+  onSelect,
   onDelete,
 }) => {
   const {
@@ -55,12 +53,25 @@ const DraggableSection: React.FC<DraggableSectionProps> = ({
     }
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (isConfigMode && onSelect && !isFixed) {
+      e.stopPropagation();
+      onSelect(id, isFixed);
+    }
+  };
+
   return (
     <section
       ref={setNodeRef}
       style={style}
-      className={`${styles.section} ${className || ''} ${isDragging ? styles.dragging : ''} ${isConfigMode ? styles.configMode : ''} ${isFixed ? styles.fixed : ''}`}
+      onClick={handleClick}
+      className={`${styles.section} ${className || ''} ${isDragging ? styles.dragging : ''} ${isConfigMode ? styles.configMode : ''} ${isFixed ? styles.fixed : ''} ${isSelected ? styles.selected : ''}`}
     >
+      {isSelected && !isFixed && (
+        <div className={styles.selectedIndicator}>
+          <CheckOutlined />
+        </div>
+      )}
       <div className={styles.header}>
         {isConfigMode && (
           <div className={styles.dragHandleWrapper}>

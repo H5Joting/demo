@@ -11,19 +11,19 @@ interface Props {
 }
 
 const AssessmentActionPanel: React.FC<Props> = ({ reportId, datasource }) => {
-  const assessmentDatasource: PanelDatasource | null = datasource?.endpoints?.assessment?.endpoint
+  const assessmentDatasource: PanelDatasource | null = datasource?.endpoints?.assessment
     ? {
         type: datasource.endpoints.assessment.type || 'api',
-        endpoint: datasource.endpoints.assessment.endpoint,
+        endpoint: datasource.endpoints.assessment.endpoint || '/api/panel/assessment',
         method: datasource.endpoints.assessment.method || 'GET',
         params: datasource.endpoints.assessment.params,
       }
     : PANEL_DATASOURCES.assessment;
 
-  const actionPlanDatasource: PanelDatasource | null = datasource?.endpoints?.actionPlan?.endpoint
+  const actionPlanDatasource: PanelDatasource | null = datasource?.endpoints?.actionPlan
     ? {
         type: datasource.endpoints.actionPlan.type || 'api',
-        endpoint: datasource.endpoints.actionPlan.endpoint,
+        endpoint: datasource.endpoints.actionPlan.endpoint || '/api/panel/action-plan',
         method: datasource.endpoints.actionPlan.method || 'GET',
         params: datasource.endpoints.actionPlan.params,
       }

@@ -9,6 +9,7 @@ interface Props {
   date: string;
   systemId: string;
   datasource?: GrafanaPanelDatasource;
+  onStatusChange?: (status: 'normal' | 'warning' | 'critical' | null) => void;
 }
 
 interface SummaryData {
@@ -17,11 +18,11 @@ interface SummaryData {
   nfCluster: Cluster | null;
 }
 
-const SummaryStatusPanel: React.FC<Props> = ({ date, systemId, datasource }) => {
-  const effectiveDatasource: PanelDatasource | null = datasource?.endpoint
+const SummaryStatusPanel: React.FC<Props> = ({ date, systemId, datasource, onStatusChange }) => {
+  const effectiveDatasource: PanelDatasource | null = datasource
     ? {
         type: datasource.type || 'api',
-        endpoint: datasource.endpoint,
+        endpoint: datasource.endpoint || '/api/panel/summary',
         method: datasource.method || 'GET',
         params: datasource.params,
       }
@@ -36,6 +37,10 @@ const SummaryStatusPanel: React.FC<Props> = ({ date, systemId, datasource }) => 
   const wxCluster = data?.wxCluster;
   const nfCluster = data?.nfCluster;
   const systemStatus = report?.system_status || 'normal';
+
+  React.useEffect(() => {
+    onStatusChange?.(report?.system_status || null);
+  }, [report?.system_status, onStatusChange]);
 
   const getStatusStyles = () => {
     switch (systemStatus) {

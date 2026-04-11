@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ApiResponse, DashboardSummary, LogMetric, CloudRegion, Cluster, BusinessSystem, Assessment, ActionPlan, ExportJSON, ImportResult } from '@/types';
+import { ApiResponse, DashboardSummary, LogMetric, CloudRegion, Cluster, BusinessSystem, Assessment, ActionPlan, ExportJSON, ImportResult, GrafanaDashboard } from '@/types';
 
 const api = axios.create({
   baseURL: '/api',
@@ -184,8 +184,8 @@ export const fetchActionPlans = async (reportId?: string): Promise<ActionPlan[]>
   return response.data.data;
 };
 
-export const exportReport = async (systemId: string): Promise<ExportJSON> => {
-  const response = await api.get<ApiResponse<ExportJSON>>(`/export/${systemId}`);
+export const exportReport = async (systemId: string): Promise<GrafanaDashboard> => {
+  const response = await api.get<ApiResponse<GrafanaDashboard>>(`/export/${systemId}`);
   if (!response.data.success || !response.data.data) {
     throw new Error(response.data.error || 'Failed to export report');
   }

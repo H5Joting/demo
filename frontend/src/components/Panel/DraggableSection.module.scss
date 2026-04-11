@@ -1,6 +1,7 @@
 .section {
   margin-bottom: 24px;
   transition: all 0.2s ease;
+  position: relative;
 
   &.configMode {
     background: white;
@@ -9,7 +10,7 @@
     padding: 0;
 
     &:not(.fixed) {
-      cursor: move;
+      cursor: pointer;
       border: 2px solid transparent;
 
       &:hover {
@@ -23,6 +24,12 @@
       border: 1px dashed #d9d9d9;
       opacity: 0.8;
     }
+
+    &.selected {
+      border-color: #1890ff;
+      box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.2);
+      background: #f0f7ff;
+    }
   }
 
   &.dragging {
@@ -31,6 +38,23 @@
     transform: scale(1.02);
     z-index: 1000;
   }
+}
+
+.selectedIndicator {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  background: #1890ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.4);
+  z-index: 10;
 }
 
 .header {

@@ -88,8 +88,14 @@ const ReportOverview: React.FC = () => {
       const result = await importReport(data as unknown as ExportJSON);
       
       if (data.panelTemplate) {
-        const systemId = result.details.business_system.id;
-        localStorage.setItem(`report-template-${systemId}`, JSON.stringify(data.panelTemplate));
+        const newSystemId = result.details.business_system.id;
+        const template = {
+          panelOrder: (data.panelTemplate as any).panelOrder || [],
+          deletedPanels: (data.panelTemplate as any).deletedPanels || [],
+          savedAt: new Date().toISOString(),
+          importedFrom: (data.panelTemplate as any).systemId,
+        };
+        localStorage.setItem(`report-template-${newSystemId}`, JSON.stringify(template));
       }
       
       const message = mode === 'updated' 

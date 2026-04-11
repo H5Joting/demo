@@ -138,6 +138,11 @@ const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onSuccess }
     });
   };
 
+  const hasUid = (data: ParsedImportData): boolean => {
+    const dashboard = data.dashboard || data;
+    return !!(data.uid || (dashboard as any).uid);
+  };
+
   const handleUpload = async (file: File) => {
     setUploadState({
       status: 'uploading',
@@ -160,7 +165,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onSuccess }
 
       setParsedData(jsonData);
 
-      if (jsonData.uid && importAction === 'auto') {
+      if (hasUid(jsonData) && importAction === 'auto') {
         setUploadState({
           status: 'confirm',
           progress: 100,
@@ -214,7 +219,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onSuccess }
 
       setParsedData(jsonData);
 
-      if (jsonData.uid && importAction === 'auto') {
+      if (hasUid(jsonData) && importAction === 'auto') {
         setUploadState({
           status: 'confirm',
           progress: 100,
@@ -243,28 +248,32 @@ const ImportModal: React.FC<ImportModalProps> = ({ visible, onClose, onSuccess }
 
   const handleConfirmImport = () => {
     if (!parsedData) return;
-
+    
     const finalData = { ...parsedData };
+    const dashboard = finalData.dashboard || finalData;
+    const uid = (dashboard as any).uid || finalData.uid;
     
     if (importAction === 'create') {
       if (finalData.dashboard) {
         finalData.dashboard = { ...finalData.dashboard, uid: undefined };
-      } else {
-        delete finalData.uid;
       }
+      delete finalData.uid;
       finalData.overwrite = false;
     } else if (importAction === 'update') {
+      if (uid && finalData.dashboard) {
+        finalData.dashboard = { ...finalData.dashboard, uid };
+      }
       finalData.overwrite = true;
     } else {
       if (finalData.dashboard) {
         finalData.dashboard = { ...finalData.dashboard, uid: undefined };
-      } else {
-        delete finalData.uid;
       }
+      delete finalData.uid;
       finalData.overwrite = false;
     }
 
-    onSuccess(finalData, importAction === 'update' ? 'updated' : 'created');
+    const mode = importAction === 'update' ? 'updated' : 'created';
+    onSuccess(finalData, mode);
     handleClose();
   };
 

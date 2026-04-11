@@ -36,10 +36,10 @@ const metricOrder = [
 ];
 
 const ClusterMetricsPanel: React.FC<Props> = ({ date, systemId, datasource }) => {
-  const effectiveDatasource: PanelDatasource | null = datasource?.endpoint
+  const effectiveDatasource: PanelDatasource | null = datasource
     ? {
         type: datasource.type || 'api',
-        endpoint: datasource.endpoint,
+        endpoint: datasource.endpoint || '/api/panel/cluster-metrics',
         method: datasource.method || 'GET',
         params: datasource.params,
       }

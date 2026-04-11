@@ -23,7 +23,7 @@ const ExecutiveSummary: React.FC<Props> = ({
       <section className={styles.section}>
         <div className={styles.header}>
           <h2>一、核心结论与风险</h2>
-          <span className={styles.subtitle}>Executive Summary & Risks</span>
+          <span className={styles.subtitle}>Overview</span>
         </div>
         <Card className={styles.summaryCard}>
           <p style={{ padding: '20px', textAlign: 'center', color: '#999' }}>
@@ -38,7 +38,7 @@ const ExecutiveSummary: React.FC<Props> = ({
     <section className={styles.section}>
       <div className={styles.header}>
         <h2>一、核心结论与风险</h2>
-        <span className={styles.subtitle}>Executive Summary & Risks</span>
+        <span className={styles.subtitle}>Overview</span>
       </div>
 
       <div className={styles.content}>
