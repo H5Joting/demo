@@ -4,6 +4,12 @@ export interface MockBusinessSystem {
   code: string;
   description: string;
   status: string;
+  datasource_reference?: {
+    original_uid: string;
+    datasource_type: string;
+    panels?: any[];
+    imported_at: string;
+  } | null;
   created_at: string;
   updated_at: string;
 }
@@ -909,9 +915,26 @@ export const getMockAssessmentsByReport = (dailyReportId: string) => {
     return allAssessments.filter(a => a.report_id === dailyReportId);
   }
   
-  const match = dailyReportId.match(/^mock-([a-f0-9-]+)-(\d{4}-\d{2}-\d{2})$/);
-  if (match) {
-    const [, bsId, dateStr] = match;
+  // 支持两种格式：
+  // 1. mock-${bsId}-${dateStr} 格式
+  // 2. ${systemId}-${dateStr} 格式（UUID 格式的 systemId）
+  let bsId: string | null = null;
+  let dateStr: string | null = null;
+  
+  const mockMatch = dailyReportId.match(/^mock-([a-f0-9-]+)-(\d{4}-\d{2}-\d{2})$/);
+  if (mockMatch) {
+    [, bsId, dateStr] = mockMatch;
+  } else {
+    // 尝试解析 ${systemId}-${dateStr} 格式
+    // systemId 是 UUID 格式 (8-4-4-4-12)，date 是最后部分
+    const parts = dailyReportId.split('-');
+    if (parts.length >= 6) {
+      bsId = parts.slice(0, 5).join('-');
+      dateStr = parts.slice(5).join('-');
+    }
+  }
+  
+  if (bsId && dateStr) {
     const system = businessSystems.find(s => s.id === bsId);
     if (!system) return [];
     
@@ -964,9 +987,26 @@ export const getMockActionPlansByReport = (dailyReportId: string) => {
     return allPlans.filter(p => p.report_id === dailyReportId);
   }
   
-  const match = dailyReportId.match(/^mock-([a-f0-9-]+)-(\d{4}-\d{2}-\d{2})$/);
-  if (match) {
-    const [, bsId, dateStr] = match;
+  // 支持两种格式：
+  // 1. mock-${bsId}-${dateStr} 格式
+  // 2. ${systemId}-${dateStr} 格式（UUID 格式的 systemId）
+  let bsId: string | null = null;
+  let dateStr: string | null = null;
+  
+  const mockMatch = dailyReportId.match(/^mock-([a-f0-9-]+)-(\d{4}-\d{2}-\d{2})$/);
+  if (mockMatch) {
+    [, bsId, dateStr] = mockMatch;
+  } else {
+    // 尝试解析 ${systemId}-${dateStr} 格式
+    // systemId 是 UUID 格式 (8-4-4-4-12)，date 是最后部分
+    const parts = dailyReportId.split('-');
+    if (parts.length >= 6) {
+      bsId = parts.slice(0, 5).join('-');
+      dateStr = parts.slice(5).join('-');
+    }
+  }
+  
+  if (bsId && dateStr) {
     const system = businessSystems.find(s => s.id === bsId);
     if (!system) return [];
     

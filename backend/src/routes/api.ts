@@ -1047,155 +1047,163 @@ router.get('/export/:systemId', async (req: express.Request, res: express.Respon
   try {
     const { systemId } = req.params;
     
-    const buildExportData = (system: any, clusters: any[]) => {
+    const DEFAULT_PANELS = [
+      {
+        id: 'panel-summary-status',
+        type: 'summary_status',
+        title: '核心结论与风险',
+        description: 'Overview',
+        datasource: {
+          type: 'api',
+          uid: 'panel-api',
+          endpoint: '/api/panel/summary',
+          method: 'GET',
+          params: { date: '${date}', systemId: '${systemId}' }
+        },
+        gridPos: { x: 0, y: 0, w: 24, h: 6 },
+        fieldConfig: {
+          defaults: {
+            unit: 'none',
+            thresholds: {
+              mode: 'absolute',
+              steps: [
+                { color: 'green', value: null },
+                { color: 'yellow', value: 0.7 },
+                { color: 'red', value: 0.9 }
+              ]
+            }
+          }
+        },
+        options: {
+          showInsight: true,
+          showClusterInfo: true
+        }
+      },
+      {
+        id: 'panel-sla-metrics',
+        type: 'sla_metrics',
+        title: 'SLA 核心指标',
+        description: 'SLA Core Metrics',
+        datasource: {
+          type: 'api',
+          uid: 'panel-api',
+          endpoint: '/api/panel/sla-metrics',
+          method: 'GET',
+          params: { date: '${date}', systemId: '${systemId}' }
+        },
+        gridPos: { x: 0, y: 6, w: 24, h: 8 },
+        fieldConfig: {
+          defaults: {
+            unit: 'percent',
+            thresholds: {
+              mode: 'absolute',
+              steps: [
+                { color: 'green', value: null },
+                { color: 'yellow', value: 80 },
+                { color: 'red', value: 95 }
+              ]
+            }
+          }
+        },
+        options: {
+          showHealthStatus: true,
+          showThreshold: true
+        }
+      },
+      {
+        id: 'panel-cluster-metrics',
+        type: 'cluster_metrics',
+        title: '集群核心指标明细',
+        description: 'Cluster Core Metrics Detail',
+        datasource: {
+          type: 'api',
+          uid: 'panel-api',
+          endpoint: '/api/panel/cluster-metrics',
+          method: 'GET',
+          params: { date: '${date}', systemId: '${systemId}' }
+        },
+        gridPos: { x: 0, y: 14, w: 24, h: 10 },
+        fieldConfig: {
+          defaults: {
+            unit: 'short',
+            custom: {
+              align: 'left'
+            }
+          }
+        },
+        options: {
+          showTrend: true,
+          clusterTabs: ['wx', 'nf']
+        }
+      },
+      {
+        id: 'panel-region-traffic',
+        type: 'region_traffic',
+        title: '云区域流量态势',
+        description: 'Cloud Region Traffic Situational Awareness',
+        datasource: {
+          type: 'api',
+          uid: 'panel-api',
+          endpoint: '/api/panel/region-traffic',
+          method: 'GET',
+          params: { date: '${date}', systemId: '${systemId}' }
+        },
+        gridPos: { x: 0, y: 24, w: 24, h: 8 },
+        fieldConfig: {
+          defaults: {
+            unit: 'short'
+          }
+        },
+        options: {
+          showTopRegions: 5,
+          clusterTabs: ['wx', 'nf']
+        }
+      },
+      {
+        id: 'panel-assessment-action',
+        type: 'assessment_action',
+        title: '评估与计划',
+        description: 'Assessment & Planning',
+        datasource: {
+          type: 'api',
+          uid: 'panel-api',
+          endpoints: {
+            assessment: {
+              type: 'api',
+              endpoint: '/api/panel/assessment',
+              method: 'GET',
+              params: { reportId: '${reportId}' }
+            },
+            actionPlan: {
+              type: 'api',
+              endpoint: '/api/panel/action-plan',
+              method: 'GET',
+              params: { reportId: '${reportId}' }
+            }
+          }
+        },
+        gridPos: { x: 0, y: 32, w: 24, h: 10 },
+        options: {
+          showInsight: true,
+          showPriority: true
+        }
+      }
+    ];
+    
+    const buildExportData = (system: any, clusters: any[], savedPanels?: any[]) => {
       const wxCluster = clusters.find((c: any) => c.type === 'wx') || null;
       const nfCluster = clusters.find((c: any) => c.type === 'nf') || null;
       
-      const panels = [
-        {
-          id: 'panel-summary-status',
-          type: 'summary_status',
-          title: '核心结论与风险',
-          description: 'Executive Summary & Risks',
-          datasource: {
-            type: 'api',
-            uid: 'panel-api',
-            endpoint: '/api/panel/summary',
-            method: 'GET',
-            params: { date: '${date}', systemId: systemId }
-          },
-          gridPos: { x: 0, y: 0, w: 24, h: 6 },
-          fieldConfig: {
-            defaults: {
-              unit: 'none',
-              thresholds: {
-                mode: 'absolute',
-                steps: [
-                  { color: 'green', value: null },
-                  { color: 'yellow', value: 0.7 },
-                  { color: 'red', value: 0.9 }
-                ]
-              }
-            }
-          },
-          options: {
-            showInsight: true,
-            showClusterInfo: true
-          }
-        },
-        {
-          id: 'panel-sla-metrics',
-          type: 'sla_metrics',
-          title: 'SLA 核心指标',
-          description: 'SLA Core Metrics',
-          datasource: {
-            type: 'api',
-            uid: 'panel-api',
-            endpoint: '/api/panel/sla-metrics',
-            method: 'GET',
-            params: { date: '${date}', systemId: systemId }
-          },
-          gridPos: { x: 0, y: 6, w: 24, h: 8 },
-          fieldConfig: {
-            defaults: {
-              unit: 'percent',
-              thresholds: {
-                mode: 'absolute',
-                steps: [
-                  { color: 'green', value: null },
-                  { color: 'yellow', value: 80 },
-                  { color: 'red', value: 95 }
-                ]
-              }
-            }
-          },
-          options: {
-            showHealthStatus: true,
-            showThreshold: true
-          }
-        },
-        {
-          id: 'panel-cluster-metrics',
-          type: 'cluster_metrics',
-          title: '集群核心指标明细',
-          description: 'Cluster Core Metrics Detail',
-          datasource: {
-            type: 'api',
-            uid: 'panel-api',
-            endpoint: '/api/panel/cluster-metrics',
-            method: 'GET',
-            params: { date: '${date}', systemId: systemId }
-          },
-          gridPos: { x: 0, y: 14, w: 24, h: 10 },
-          fieldConfig: {
-            defaults: {
-              unit: 'short',
-              custom: {
-                align: 'left'
-              }
-            }
-          },
-          options: {
-            showTrend: true,
-            clusterTabs: ['wx', 'nf']
-          }
-        },
-        {
-          id: 'panel-region-traffic',
-          type: 'region_traffic',
-          title: '云区域流量态势',
-          description: 'Cloud Region Traffic Situational Awareness',
-          datasource: {
-            type: 'api',
-            uid: 'panel-api',
-            endpoint: '/api/panel/region-traffic',
-            method: 'GET',
-            params: { date: '${date}', systemId: systemId }
-          },
-          gridPos: { x: 0, y: 24, w: 24, h: 8 },
-          fieldConfig: {
-            defaults: {
-              unit: 'short'
-            }
-          },
-          options: {
-            showTopRegions: 5,
-            clusterTabs: ['wx', 'nf']
-          }
-        },
-        {
-          id: 'panel-assessment-action',
-          type: 'assessment_action',
-          title: '评估与计划',
-          description: 'Assessment & Planning',
-          datasource: {
-            type: 'api',
-            uid: 'panel-api',
-            endpoints: {
-              assessment: {
-                type: 'api',
-                endpoint: '/api/panel/assessment',
-                method: 'GET',
-                params: { reportId: '${reportId}' }
-              },
-              actionPlan: {
-                type: 'api',
-                endpoint: '/api/panel/action-plan',
-                method: 'GET',
-                params: { reportId: '${reportId}' }
-              }
-            }
-          },
-          gridPos: { x: 0, y: 32, w: 24, h: 10 },
-          options: {
-            showInsight: true,
-            showPriority: true
-          }
-        }
-      ];
+      const panels = savedPanels && savedPanels.length > 0 ? savedPanels : DEFAULT_PANELS;
+      
+      const originalUid = system?.datasource_reference?.original_uid || system.id;
       
       return {
-        uid: system.id,
+        uid: originalUid,
+        datasource: {
+          type: 'supabase',
+          uid: originalUid,
+        },
         title: system.name,
         description: system.description || '',
         tags: ['运维报表', '日志分析', system.code],
@@ -1229,7 +1237,7 @@ router.get('/export/:systemId', async (req: express.Request, res: express.Respon
               type: 'custom',
               label: '系统ID',
               current: {
-                value: systemId,
+                value: originalUid,
                 text: system.name
               },
               options: []
@@ -1277,7 +1285,8 @@ router.get('/export/:systemId', async (req: express.Request, res: express.Respon
       }
       
       const clusters = getMockClustersByBusinessSystem(systemId);
-      const exportData = buildExportData(system, clusters);
+      const savedPanels = system?.datasource_reference?.panels;
+      const exportData = buildExportData(system, clusters, savedPanels);
       
       return res.json({ success: true, data: exportData });
     }
@@ -1292,7 +1301,8 @@ router.get('/export/:systemId', async (req: express.Request, res: express.Respon
     
     const { data: clusters } = await supabase!.from('clusters').select('*').eq('business_system_id', systemId);
     
-    const exportData = buildExportData(system, clusters || []);
+    const savedPanels = system?.datasource_reference?.panels;
+    const exportData = buildExportData(system, clusters || [], savedPanels);
     
     res.json({ success: true, data: exportData });
   } catch (error) {
@@ -1578,21 +1588,79 @@ router.post('/import', async (req: express.Request, res: express.Response) => {
     }
 
     let originalDatasourceUid = dashboard.datasource?.uid || importData.datasource?.uid || null;
-    const panels = dashboard.panels || importData.panels || [];
+    let panels = dashboard.panels || importData.panels || [];
 
-    // 从 panel 的 datasource.params.systemId 中提取 original_uid
-    if (!originalDatasourceUid && panels.length > 0) {
-      for (const panel of panels) {
-        const panelSystemId = panel.datasource?.params?.systemId;
-        if (panelSystemId && typeof panelSystemId === 'string' && !panelSystemId.startsWith('${')) {
-          originalDatasourceUid = panelSystemId;
-          console.log(`[Import] Extracted original_uid from panel ${panel.id}: ${originalDatasourceUid}`);
-          break;
-        }
+    if (!originalDatasourceUid) {
+      originalDatasourceUid = dashboard.uid || importData.uid || null;
+      if (originalDatasourceUid) {
+        console.log(`[Import] Using dashboard uid as original_uid: ${originalDatasourceUid}`);
       }
     }
 
+    /**
+     * 替换面板配置中的模板变量为固定值
+     * 
+     * 将 ${systemId} 替换为原始报表ID，确保导入后的报表数据源参数是固定的
+     * 这样即使原始报表被删除，新报表仍能正常获取数据
+     */
+    const resolvePanelParams = (panels: any[], originalUid: string): any[] => {
+      return panels.map(panel => {
+        const resolvedPanel = { ...panel };
+        
+        if (resolvedPanel.datasource) {
+          if (resolvedPanel.datasource.params) {
+            const resolvedParams: Record<string, any> = {};
+            for (const [key, value] of Object.entries(resolvedPanel.datasource.params)) {
+              if (typeof value === 'string') {
+                resolvedParams[key] = value
+                  .replace(/\$\{systemId\}/g, originalUid)
+                  .replace(/\$\{reportId\}/g, `${originalUid}-\${date}`);
+              } else {
+                resolvedParams[key] = value;
+              }
+            }
+            resolvedPanel.datasource = {
+              ...resolvedPanel.datasource,
+              params: resolvedParams
+            };
+          }
+          
+          if (resolvedPanel.datasource.endpoints) {
+            const resolvedEndpoints: any = {};
+            for (const [endpointKey, endpoint] of Object.entries(resolvedPanel.datasource.endpoints)) {
+              if ((endpoint as any)?.params) {
+                const resolvedParams: Record<string, any> = {};
+                for (const [key, value] of Object.entries((endpoint as any).params)) {
+                  if (typeof value === 'string') {
+                    resolvedParams[key] = value
+                      .replace(/\$\{systemId\}/g, originalUid)
+                      .replace(/\$\{reportId\}/g, `${originalUid}-\${date}`);
+                  } else {
+                    resolvedParams[key] = value;
+                  }
+                }
+                resolvedEndpoints[endpointKey] = {
+                  ...(endpoint as any),
+                  params: resolvedParams
+                };
+              } else {
+                resolvedEndpoints[endpointKey] = endpoint;
+              }
+            }
+            resolvedPanel.datasource = {
+              ...resolvedPanel.datasource,
+              endpoints: resolvedEndpoints
+            };
+          }
+        }
+        
+        return resolvedPanel;
+      });
+    };
+
     if (originalDatasourceUid) {
+      panels = resolvePanelParams(panels, originalDatasourceUid);
+      
       const { error: updateError } = await supabaseClient!
         .from('business_systems')
         .update({
@@ -1922,7 +1990,7 @@ router.get('/panel/assessment', async (req: express.Request, res: express.Respon
     // reportId 格式为 ${systemId}-${date}，需要解析并查询对应的 daily_report
     if (reportId && typeof reportId === 'string') {
       const parts = reportId.split('-');
-      if (parts.length >= 4) {
+      if (parts.length >= 6) {
         // systemId 是 UUID 格式 (8-4-4-4-12)，date 是最后部分
         const systemId = parts.slice(0, 5).join('-');
         const dateStr = parts.slice(5).join('-');
@@ -1942,11 +2010,17 @@ router.get('/panel/assessment', async (req: express.Request, res: express.Respon
           const { data } = await supabase!.from('assessments').select('*').eq('report_id', dailyReport.id);
           return res.json({ success: true, data: data || [] });
         }
+        
+        // 没有找到对应的 daily_report，返回空数组
+        return res.json({ success: true, data: [] });
       }
+      
+      // reportId 格式不正确，返回空数组
+      return res.json({ success: true, data: [] });
     }
     
-    const { data } = await supabase!.from('assessments').select('*');
-    res.json({ success: true, data: data || [] });
+    // 没有 reportId，返回空数组
+    res.json({ success: true, data: [] });
   } catch (error) {
     console.error('Failed to fetch assessments:', error);
     res.json({ success: true, data: [] });
@@ -1964,18 +2038,14 @@ router.get('/panel/action-plan', async (req: express.Request, res: express.Respo
 
     const supabase = getSupabase();
     
-    // reportId 格式为 ${systemId}-${date}，需要解析并查询对应的 daily_report
     if (reportId && typeof reportId === 'string') {
       const parts = reportId.split('-');
-      if (parts.length >= 4) {
-        // systemId 是 UUID 格式 (8-4-4-4-12)，date 是最后部分
+      if (parts.length >= 6) {
         const systemId = parts.slice(0, 5).join('-');
         const dateStr = parts.slice(5).join('-');
         
-        // 解析数据源 UID
         const resolvedSystemId = await resolveDatasourceUid(supabase!, systemId);
         
-        // 查询对应的 daily_report
         const { data: dailyReport } = await supabase!
           .from('daily_reports')
           .select('id')
@@ -1991,18 +2061,287 @@ router.get('/panel/action-plan', async (req: express.Request, res: express.Respo
           })) || [];
           return res.json({ success: true, data: result });
         }
+        
+        // 没有找到对应的 daily_report，返回空数组
+        return res.json({ success: true, data: [] });
       }
+      
+      // reportId 格式不正确，返回空数组
+      return res.json({ success: true, data: [] });
     }
     
-    const { data } = await supabase!.from('action_plans').select('*');
-    const result = data?.map((p: any) => ({
-      ...p,
-      items: typeof p.items === 'string' ? JSON.parse(p.items) : p.items
-    })) || [];
-    res.json({ success: true, data: result });
+    // 没有 reportId，返回空数组
+    res.json({ success: true, data: [] });
   } catch (error) {
     console.error('Failed to fetch action plans:', error);
     res.json({ success: true, data: [] });
+  }
+});
+
+router.post('/ai/chat', async (req: express.Request, res: express.Response) => {
+  try {
+    const { message, selectedPanel, conversationHistory } = req.body;
+
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: '消息内容不能为空',
+      });
+    }
+
+    const { callGLM5 } = await import('../services/glmService');
+    const result = await callGLM5(
+      message,
+      selectedPanel,
+      conversationHistory || []
+    );
+
+    res.json({
+      success: result.success,
+      data: {
+        message: result.message,
+        modifications: result.modifications,
+      },
+    });
+  } catch (error) {
+    console.error('AI chat error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'AI 服务暂时不可用，请稍后重试',
+    });
+  }
+});
+
+router.post('/daily-reports', async (req: express.Request, res: express.Response) => {
+  try {
+    if (!isUseSupabaseEnabled() || !isDatabaseConnected()) {
+      return res.status(503).json({ 
+        success: false, 
+        error: '数据库未启用或未连接',
+        code: 'DATABASE_UNAVAILABLE' 
+      });
+    }
+
+    const supabaseClient = getSupabase();
+    if (!supabaseClient) {
+      return res.status(503).json({ 
+        success: false, 
+        error: '数据库客户端未初始化',
+        code: 'DATABASE_NOT_INITIALIZED' 
+      });
+    }
+
+    const report = req.body;
+    const { error } = await supabaseClient
+      .from('daily_reports')
+      .upsert(report, { onConflict: 'id' });
+    
+    if (error) {
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+
+    res.json({ success: true, data: report });
+  } catch (error: any) {
+    console.error('Insert daily report error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+router.post('/log-metrics/batch', async (req: express.Request, res: express.Response) => {
+  try {
+    if (!isUseSupabaseEnabled() || !isDatabaseConnected()) {
+      return res.status(503).json({ 
+        success: false, 
+        error: '数据库未启用或未连接',
+        code: 'DATABASE_UNAVAILABLE' 
+      });
+    }
+
+    const supabaseClient = getSupabase();
+    if (!supabaseClient) {
+      return res.status(503).json({ 
+        success: false, 
+        error: '数据库客户端未初始化',
+        code: 'DATABASE_NOT_INITIALIZED' 
+      });
+    }
+
+    const { metrics } = req.body;
+    if (!metrics || !Array.isArray(metrics)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: '无效的指标数据' 
+      });
+    }
+
+    const { error } = await supabaseClient
+      .from('log_metrics')
+      .insert(metrics);
+    
+    if (error) {
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+
+    res.json({ success: true, data: { count: metrics.length } });
+  } catch (error: any) {
+    console.error('Insert log metrics error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+router.post('/cloud-regions/batch', async (req: express.Request, res: express.Response) => {
+  try {
+    if (!isUseSupabaseEnabled() || !isDatabaseConnected()) {
+      return res.status(503).json({ 
+        success: false, 
+        error: '数据库未启用或未连接',
+        code: 'DATABASE_UNAVAILABLE' 
+      });
+    }
+
+    const supabaseClient = getSupabase();
+    if (!supabaseClient) {
+      return res.status(503).json({ 
+        success: false, 
+        error: '数据库客户端未初始化',
+        code: 'DATABASE_NOT_INITIALIZED' 
+      });
+    }
+
+    const { regions } = req.body;
+    if (!regions || !Array.isArray(regions)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: '无效的云区域数据' 
+      });
+    }
+
+    const { error } = await supabaseClient
+      .from('cloud_regions')
+      .insert(regions);
+    
+    if (error) {
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+
+    res.json({ success: true, data: { count: regions.length } });
+  } catch (error: any) {
+    console.error('Insert cloud regions error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+router.post('/assessments/batch', async (req: express.Request, res: express.Response) => {
+  try {
+    if (!isUseSupabaseEnabled() || !isDatabaseConnected()) {
+      return res.status(503).json({ 
+        success: false, 
+        error: '数据库未启用或未连接',
+        code: 'DATABASE_UNAVAILABLE' 
+      });
+    }
+
+    const supabaseClient = getSupabase();
+    if (!supabaseClient) {
+      return res.status(503).json({ 
+        success: false, 
+        error: '数据库客户端未初始化',
+        code: 'DATABASE_NOT_INITIALIZED' 
+      });
+    }
+
+    const { assessments } = req.body;
+    if (!assessments || !Array.isArray(assessments)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: '无效的评估数据' 
+      });
+    }
+
+    const { error } = await supabaseClient
+      .from('assessments')
+      .insert(assessments);
+    
+    if (error) {
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+
+    res.json({ success: true, data: { count: assessments.length } });
+  } catch (error: any) {
+    console.error('Insert assessments error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+router.post('/action-plans/batch', async (req: express.Request, res: express.Response) => {
+  try {
+    if (!isUseSupabaseEnabled() || !isDatabaseConnected()) {
+      return res.status(503).json({ 
+        success: false, 
+        error: '数据库未启用或未连接',
+        code: 'DATABASE_UNAVAILABLE' 
+      });
+    }
+
+    const supabaseClient = getSupabase();
+    if (!supabaseClient) {
+      return res.status(503).json({ 
+        success: false, 
+        error: '数据库客户端未初始化',
+        code: 'DATABASE_NOT_INITIALIZED' 
+      });
+    }
+
+    const { plans } = req.body;
+    if (!plans || !Array.isArray(plans)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: '无效的行动计划数据' 
+      });
+    }
+
+    const { error } = await supabaseClient
+      .from('action_plans')
+      .insert(plans);
+    
+    if (error) {
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+
+    res.json({ success: true, data: { count: plans.length } });
+  } catch (error: any) {
+    console.error('Insert action plans error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
   }
 });
 

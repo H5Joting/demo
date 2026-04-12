@@ -28,6 +28,7 @@ export interface PageHeaderProps {
   isConfigMode?: boolean;
   operationCount?: number;
   isFullscreen?: boolean;
+  hasUnsavedChanges?: boolean;
 }
 
 const PageHeader: React.FC<PageHeaderProps> = ({
@@ -51,6 +52,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   isConfigMode = false,
   operationCount = 0,
   isFullscreen = false,
+  hasUnsavedChanges = false,
 }) => {
   return (
     <div className={`${styles.container} ${fullWidth ? styles.fullWidth : ''} ${className || ''}`}>
@@ -134,9 +136,10 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                 <UndoOutlined className={styles.actionIcon} />
                 撤销{operationCount > 0 && ` (${operationCount})`}
               </button>
-              <button className={styles.saveButton} onClick={onSave}>
+              <button className={`${styles.saveButton} ${hasUnsavedChanges ? styles.saveButtonHighlight : ''}`} onClick={onSave}>
                 <SaveOutlined className={styles.saveIcon} />
                 保存模板
+                {hasUnsavedChanges && <span className={styles.unsavedBadge}>未保存</span>}
               </button>
             </>
           ) : (

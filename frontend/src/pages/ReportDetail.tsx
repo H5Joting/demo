@@ -219,7 +219,10 @@ const ReportDetail: React.FC = () => {
   const [isConfigMode, setIsConfigMode] = useState(false);
   const [panelOrder, setPanelOrder] = useState<string[]>([]);
   const [deletedPanels, setDeletedPanels] = useState<Set<string>>(new Set());
+  const [panelModifications, setPanelModifications] = useState<Record<string, Record<string, any>>>({});
+  const [pendingModifications, setPendingModifications] = useState<Record<string, Record<string, any>>>({});
   const [operationHistory, setOperationHistory] = useState<Array<{ panelOrder: string[]; deletedPanels: string[] }>>([]);
+  const [modificationHistory, setModificationHistory] = useState<Array<{ pendingModifications: Record<string, Record<string, any>> }>>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const isLoadingRef = React.useRef(false);
   const [selectedPanelId, setSelectedPanelId] = useState<string | null>(null);
@@ -310,12 +313,38 @@ const ReportDetail: React.FC = () => {
       return null;
     }
 
+    let orderedPanels: GrafanaPanel[];
     if (panelOrder.length === 0) {
-      return originalPanels;
+      orderedPanels = originalPanels;
+    } else {
+      orderedPanels = panelOrder.map(id => originalPanels.find(p => p.id === id)).filter(Boolean) as GrafanaPanel[];
     }
 
-    return panelOrder.map(id => originalPanels.find(p => p.id === id)).filter(Boolean) as GrafanaPanel[];
-  }, [system, panelOrder]);
+    const modifiedPanels = orderedPanels.map(panel => {
+      const savedMods = panelModifications[panel.id];
+      const pendingMods = pendingModifications[panel.id];
+      
+      const mergedMods = {
+        title: pendingMods?.title ?? savedMods?.title,
+        description: pendingMods?.description ?? savedMods?.description,
+        endpoint: pendingMods?.endpoint ?? savedMods?.endpoint,
+      };
+      
+      if (mergedMods.title || mergedMods.description || mergedMods.endpoint) {
+        return {
+          ...panel,
+          title: mergedMods.title ?? panel.title,
+          description: mergedMods.description ?? panel.description,
+          datasource: mergedMods.endpoint 
+            ? { ...panel.datasource, endpoint: mergedMods.endpoint }
+            : panel.datasource,
+        };
+      }
+      return panel;
+    });
+
+    return modifiedPanels;
+  }, [system, panelOrder, panelModifications, pendingModifications]);
 
   const getPanelTitle = useCallback((panelId: string): string => {
     if (!panels) {
@@ -364,6 +393,60 @@ const ReportDetail: React.FC = () => {
     
     message.success('面板已删除');
   }, [panelOrder, deletedPanels, systemId]);
+
+  const handleUpdatePanelTitle = useCallback((panelId: string, newTitle: string) => {
+    console.log('[handleUpdatePanelTitle] 修改面板标题:', panelId, '->', newTitle);
+    
+    setModificationHistory(prev => [...prev, { 
+      pendingModifications: { ...pendingModifications } 
+    }]);
+    
+    setPendingModifications(prev => ({
+      ...prev,
+      [panelId]: {
+        ...prev[panelId],
+        title: newTitle,
+      },
+    }));
+    
+    message.success(`标题已修改为「${newTitle}」(临时预览，需保存生效)`);
+  }, [pendingModifications]);
+
+  const handleUpdatePanelDescription = useCallback((panelId: string, newDescription: string) => {
+    console.log('[handleUpdatePanelDescription] 修改面板描述:', panelId, '->', newDescription);
+    
+    setModificationHistory(prev => [...prev, { 
+      pendingModifications: { ...pendingModifications } 
+    }]);
+    
+    setPendingModifications(prev => ({
+      ...prev,
+      [panelId]: {
+        ...prev[panelId],
+        description: newDescription,
+      },
+    }));
+    
+    message.success(`描述已修改 (临时预览，需保存生效)`);
+  }, [pendingModifications]);
+
+  const handleUpdatePanelEndpoint = useCallback((panelId: string, newEndpoint: string) => {
+    console.log('[handleUpdatePanelEndpoint] 修改面板数据源:', panelId, '->', newEndpoint);
+    
+    setModificationHistory(prev => [...prev, { 
+      pendingModifications: { ...pendingModifications } 
+    }]);
+    
+    setPendingModifications(prev => ({
+      ...prev,
+      [panelId]: {
+        ...prev[panelId],
+        endpoint: newEndpoint,
+      },
+    }));
+    
+    message.success(`数据源已修改为「${newEndpoint}」(临时预览，需保存生效)`);
+  }, [pendingModifications]);
 
   const handleSendMessage = useCallback(async (content: string) => {
     const userMessage: ChatMessage = {
@@ -418,11 +501,19 @@ const ReportDetail: React.FC = () => {
 
         if (result.data.modifications) {
           result.data.modifications.forEach((mod: any) => {
+            console.log('[AI Modification]', mod);
+            
             if (mod.field === 'remove') {
               handleDeletePanel(mod.panelId);
               setSelectedPanelId(null);
             } else if (mod.field === 'add') {
               message.success(`已添加新面板：${mod.newValue.type}`);
+            } else if (mod.field === 'title') {
+              handleUpdatePanelTitle(mod.panelId, mod.newValue);
+            } else if (mod.field === 'description') {
+              handleUpdatePanelDescription(mod.panelId, mod.newValue);
+            } else if (mod.field === 'endpoint') {
+              handleUpdatePanelEndpoint(mod.panelId, mod.newValue);
             }
           });
         }
@@ -447,7 +538,7 @@ const ReportDetail: React.FC = () => {
     } finally {
       setIsAiTyping(false);
     }
-  }, [selectedPanelId, chatMessages, getPanelTitle, getPanelType, handleDeletePanel]);
+  }, [selectedPanelId, chatMessages, getPanelTitle, getPanelType, handleDeletePanel, handleUpdatePanelTitle, handleUpdatePanelDescription, handleUpdatePanelEndpoint]);
 
   const handlePanelSelect = useCallback((panelId: string, isFixed: boolean) => {
     if (isFixed) {
@@ -480,6 +571,10 @@ const ReportDetail: React.FC = () => {
           const convertedDeletedPanels = template.deletedPanels.map((id: string) => oldToNewIdMap[id] || id);
           console.log('[loadTemplate] Converted deletedPanels:', template.deletedPanels, '->', convertedDeletedPanels);
           setDeletedPanels(new Set(convertedDeletedPanels));
+        }
+        if (template.panelModifications) {
+          console.log('[loadTemplate] Loaded panelModifications:', template.panelModifications);
+          setPanelModifications(template.panelModifications);
         }
         return;
       } catch (e) {
@@ -657,14 +752,28 @@ const ReportDetail: React.FC = () => {
   };
 
   const handleSave = () => {
+    const mergedModifications = { ...panelModifications };
+    
+    for (const [panelId, mods] of Object.entries(pendingModifications)) {
+      mergedModifications[panelId] = {
+        ...mergedModifications[panelId],
+        ...mods,
+      };
+    }
+    
+    setPanelModifications(mergedModifications);
+    setPendingModifications({});
+    setModificationHistory([]);
+    
     const template = {
       panelOrder,
       deletedPanels: Array.from(deletedPanels),
+      panelModifications: mergedModifications,
       savedAt: new Date().toISOString(),
     };
     
     localStorage.setItem(`report-template-${systemId}`, JSON.stringify(template));
-    message.success('模板保存成功');
+    message.success('模板保存成功，所有修改已生效');
     setIsConfigMode(false);
   };
 
@@ -679,6 +788,14 @@ const ReportDetail: React.FC = () => {
   };
 
   const handleUndo = () => {
+    if (modificationHistory.length > 0) {
+      const lastModification = modificationHistory[modificationHistory.length - 1];
+      setPendingModifications(lastModification.pendingModifications);
+      setModificationHistory(prev => prev.slice(0, -1));
+      message.success('已撤销对话修改');
+      return;
+    }
+    
     if (operationHistory.length === 0) {
       message.info('没有可撤销的操作');
       return;
@@ -692,6 +809,7 @@ const ReportDetail: React.FC = () => {
     const template = {
       panelOrder: lastOperation.panelOrder,
       deletedPanels: lastOperation.deletedPanels,
+      panelModifications,
       savedAt: new Date().toISOString(),
     };
     localStorage.setItem(`report-template-${systemId}`, JSON.stringify(template));
@@ -798,11 +916,11 @@ const ReportDetail: React.FC = () => {
       );
     }
 
-    const filteredPanels = panelOrder.length > 0 
+    const filteredPanels: GrafanaPanel[] = panelOrder.length > 0 
       ? panelOrder
           .filter(id => !deletedPanels.has(id))
           .map(id => panels.find(p => p.id === id))
-          .filter(Boolean)
+          .filter((p): p is GrafanaPanel => p !== undefined)
       : panels.filter(panel => !deletedPanels.has(panel.id));
 
     console.log('[renderDynamicPanels] filteredPanels (panels存在):', filteredPanels.map((p: any) => ({ id: p.id, title: p.title })));
@@ -898,8 +1016,9 @@ const ReportDetail: React.FC = () => {
         onUndo={handleUndo}
         onBack={() => navigate('/overview')}
         isConfigMode={isConfigMode}
-        operationCount={operationHistory.length}
+        operationCount={operationHistory.length + modificationHistory.length}
         isFullscreen={isFullscreen}
+        hasUnsavedChanges={Object.keys(pendingModifications).length > 0}
       />
 
       <div className={`${styles.content} ${isConfigMode ? styles.configModeContent : ''}`}>
